@@ -1,0 +1,95 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isAuth() && getUserRole() == 'admin';
+    }
+
+    function isModerator() {
+      return isAuth() && getUserRole() == 'moderator';
+    }
+
+    function isStudent() {
+      return isAuth() && getUserRole() == 'student';
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuth() && (request.auth.uid == userId || isAdmin() || isModerator());
+      allow create: if isAdmin() || isModerator();
+      allow update: if isAdmin() || isModerator();
+      allow delete: if isAdmin() || (isModerator() && resource.data.role == 'student');
+    }
+
+    // Subjects collection
+    match /subjects/{subjectId} {
+      allow read: if isAuth();
+      allow create: if isModerator() || isAdmin();
+      allow update, delete: if isAdmin() || isModerator();
+    }
+
+    // Classes collection
+    match /classes/{classId} {
+      allow read: if isAuth();
+      allow create, update: if isAdmin() || isModerator();
+      allow delete: if isAdmin();
+    }
+
+    // Test Banks collection
+    match /testBanks/{bankId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Tests collection
+    match /tests/{testId} {
+      allow read: if isAuth();
+      allow create: if isModerator() || isAdmin();
+      allow update: if (isModerator() || isAdmin()) && resource.data.createdBy == request.auth.uid;
+      allow delete: if (isModerator() || isAdmin()) && resource.data.createdBy == request.auth.uid;
+
+      // Questions subcollection — students cannot read (correctIndex is hidden)
+      // Students receive questions via startTest Cloud Function (without correctIndex)
+      match /questions/{questionId} {
+        allow read: if isModerator() || isAdmin();
+        allow create, update, delete: if (isModerator() || isAdmin())
+          && get(/databases/$(database)/documents/tests/$(testId)).data.createdBy == request.auth.uid;
+      }
+    }
+
+    // Results collection
+    // Create/complete handled by Cloud Functions (admin SDK)
+    // Students can only update 'answers' field for auto-save (no score/status tampering)
+    match /results/{resultId} {
+      allow read: if isAuth() && (
+        resource == null
+        || resource.data.studentId == request.auth.uid
+        || isModerator()
+        || isAdmin()
+      );
+      allow create: if false;
+      allow update: if isStudent()
+        && resource.data.studentId == request.auth.uid
+        && resource.data.status == 'in_progress'
+        && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['status', 'score', 'correctCount', 'wrongQuestionIds', 'submittedAt', 'startedAt', 'questionIds', 'testId', 'studentId', 'classId', 'optionsMap']);
+      allow delete: if isModerator() || isAdmin();
+    }
+
+    // Absences collection
+    match /absences/{absenceId} {
+      allow read: if isAuth() && (isModerator() || isAdmin());
+      allow create: if isModerator() || isAdmin();
+      allow update, delete: if isModerator() || isAdmin();
+    }
+  }
+}

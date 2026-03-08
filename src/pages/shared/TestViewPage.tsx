@@ -1,0 +1,86 @@
+import { useParams, Link } from 'react-router-dom'
+import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
+import { getTest, getQuestions } from '@/services/db'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { Badge } from '@/components/ui/Badge'
+import { MathText } from '@/components/ui/MathText'
+
+interface TestViewPageProps {
+  backTo: string
+  backLabel: string
+}
+
+export function TestViewPage({ backTo, backLabel }: TestViewPageProps) {
+  const { id: testId } = useParams<{ id: string }>()
+
+  const { data: test, loading: loadingTest } = useFirestoreQuery(
+    () => getTest(testId!),
+    [testId],
+  )
+  const { data: questions, loading: loadingQuestions } = useFirestoreQuery(
+    () => getQuestions(testId!),
+    [testId],
+  )
+
+  if (loadingTest || loadingQuestions) return <LoadingSpinner />
+  if (!test) return <p className="text-gray-500">Тест не найден</p>
+
+  const bankCount = questions?.length ?? 0
+
+  return (
+    <div>
+      {/* Header */}
+      <div className="mb-6">
+        <Link to={backTo} className="text-sm text-blue-600 hover:text-blue-800">
+          &larr; {backLabel}
+        </Link>
+        <h1 className="text-2xl font-bold text-gray-900 mt-2">{test.title}</h1>
+        <p className="text-sm text-gray-500">
+          {test.subject} &middot; {test.timeLimit} мин &middot; {test.questionCount} вопросов для ученика
+        </p>
+        <div className="mt-2">
+          <Badge variant={test.published ? 'success' : 'warning'}>
+            {test.published ? 'Опубликован' : 'Черновик'}
+          </Badge>
+        </div>
+      </div>
+
+      {/* Bank counter */}
+      <div className="bg-blue-50 rounded-lg px-4 py-3 mb-4 text-sm text-blue-700">
+        В банке: <strong>{bankCount}</strong> вопросов, ученик получит: <strong>{test.questionCount}</strong>
+      </div>
+
+      {/* Questions list (read-only) */}
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">Банк вопросов</h2>
+
+      {questions && questions.length > 0 ? (
+        <div className="flex flex-col gap-3">
+          {questions.map((q, idx) => (
+            <div key={q.id} className="bg-white rounded-xl shadow-sm p-4">
+              <p className="text-sm font-medium text-gray-900">
+                <span className="text-gray-400 mr-2">#{idx + 1}</span>
+                <MathText text={q.text} />
+              </p>
+              <div className="mt-2 grid grid-cols-2 gap-1">
+                {q.options.map((opt, i) => (
+                  <div
+                    key={i}
+                    className={`text-sm px-2 py-1 rounded ${
+                      i === q.correctIndex
+                        ? 'bg-green-50 text-green-700 font-medium'
+                        : 'text-gray-600'
+                    }`}
+                  >
+                    {String.fromCharCode(65 + i)}. <MathText text={opt} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-gray-500 text-center py-8">Вопросов пока нет.</p>
+      )}
+    </div>
+  )
+}
