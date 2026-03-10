@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
 import { getClasses, createClass } from '@/services/db'
 import { useToast } from '@/context/ToastContext'
+import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
@@ -11,6 +12,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { validateField, required } from '@/utils/validation'
 
 export function ClassesListPage({ basePath }: { basePath: string }) {
+  const { user } = useAuth()
   const { data: classes, loading, refetch } = useFirestoreQuery(() => getClasses())
   const { showSuccess, showError } = useToast()
 
@@ -33,7 +35,7 @@ export function ClassesListPage({ basePath }: { basePath: string }) {
     }
     setSubmitting(true)
     try {
-      await createClass(className.trim())
+      await createClass(className.trim(), user!.uid)
       showSuccess('Класс создан')
       setModalOpen(false)
       resetForm()

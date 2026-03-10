@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { Fragment, useState, useMemo } from 'react'
 import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
 import {
   getUsers, getClasses, updateUser,
@@ -33,12 +33,45 @@ export function StudentsPage() {
 
   const filteredStudents = useMemo(() => {
     if (!students) return []
-    if (!search.trim()) return students
-    const q = search.toLowerCase()
-    return students.filter(
-      (s) => s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)
-    )
-  }, [students, search])
+
+    // Build class name lookup for sorting
+    const classMap = new Map<string, string>()
+    classes?.forEach((c) => classMap.set(c.id, c.name))
+
+    // Filter by search
+    const filtered = search.trim()
+      ? students.filter((s) => {
+          const q = search.toLowerCase()
+          return s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)
+        })
+      : students
+
+    // Sort: by class name first, then by student name
+    return [...filtered].sort((a, b) => {
+      // Students without a class go to the very end (U+FFFF sorts last)
+      const clsA = a.classId ? (classMap.get(a.classId) ?? '\uffff') : '\uffff'
+      const clsB = b.classId ? (classMap.get(b.classId) ?? '\uffff') : '\uffff'
+      const clsCmp = clsA.localeCompare(clsB, 'ru')
+      if (clsCmp !== 0) return clsCmp
+      return a.name.localeCompare(b.name, 'ru')
+    })
+  }, [students, classes, search])
+
+  // Group sorted students by class for rendering with headers
+  const studentGroups = useMemo(() => {
+    const groups: { classId: string; className: string; students: typeof filteredStudents }[] = []
+    for (const student of filteredStudents) {
+      const cid = student.classId ?? ''
+      const last = groups[groups.length - 1]
+      if (last && last.classId === cid) {
+        last.students.push(student)
+      } else {
+        const className = cid ? (classes?.find((c) => c.id === cid)?.name ?? '—') : 'Без класса'
+        groups.push({ classId: cid, className, students: [student] })
+      }
+    }
+    return groups
+  }, [filteredStudents, classes])
 
   const allVisibleSelected = filteredStudents.length > 0 && filteredStudents.every((s) => selectedIds.has(s.uid))
 
@@ -181,41 +214,53 @@ export function StudentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredStudents.map((student) => (
-                <tr
-                  key={student.uid}
-                  className={`hover:bg-gray-50 ${selectedIds.has(student.uid) ? 'bg-blue-50' : ''}`}
-                >
-                  <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(student.uid)}
-                      onChange={() => toggleSelect(student.uid)}
-                      className="rounded border-gray-300 cursor-pointer"
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-900">{student.name}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500 font-mono text-xs">{student.email}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500 font-mono text-xs">{student.plainPassword ?? '—'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{getClassName(student.classId)}</td>
-                  <td className="px-4 py-3 text-right flex items-center justify-end gap-3">
-                    <button
-                      onClick={() => openEditModal(student)}
-                      className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer"
+              {studentGroups.map((group) => (
+                <Fragment key={`group-${group.classId || 'none'}`}>
+                  {/* Class header row */}
+                  <tr>
+                    <td colSpan={6} className="px-4 py-1.5 bg-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide border-t border-gray-200">
+                      {group.className}
+                      <span className="ml-2 font-normal normal-case text-gray-400">{group.students.length} уч.</span>
+                    </td>
+                  </tr>
+                  {/* Student rows */}
+                  {group.students.map((student) => (
+                    <tr
+                      key={student.uid}
+                      className={`hover:bg-gray-50 ${selectedIds.has(student.uid) ? 'bg-blue-50' : ''}`}
                     >
-                      Редактировать
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedIds(new Set([student.uid]))
-                        setConfirmDeleteOpen(true)
-                      }}
-                      className="text-sm text-red-600 hover:text-red-800 cursor-pointer"
-                    >
-                      Удалить
-                    </button>
-                  </td>
-                </tr>
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(student.uid)}
+                          onChange={() => toggleSelect(student.uid)}
+                          className="rounded border-gray-300 cursor-pointer"
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{student.name}</td>
+                      <td className="px-4 py-3 text-sm text-gray-500 font-mono text-xs">{student.email}</td>
+                      <td className="px-4 py-3 text-sm text-gray-500 font-mono text-xs">{student.plainPassword ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-500">{getClassName(student.classId)}</td>
+                      <td className="px-4 py-3 text-right flex items-center justify-end gap-3">
+                        <button
+                          onClick={() => openEditModal(student)}
+                          className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer"
+                        >
+                          Редактировать
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedIds(new Set([student.uid]))
+                            setConfirmDeleteOpen(true)
+                          }}
+                          className="text-sm text-red-600 hover:text-red-800 cursor-pointer"
+                        >
+                          Удалить
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </Fragment>
               ))}
             </tbody>
           </table>

@@ -2,7 +2,7 @@ import { onDocumentDeleted } from "firebase-functions/v2/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { getAuth } from "firebase-admin/auth";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { getFirestore, FieldValue, FieldPath } from "firebase-admin/firestore";
 import { initializeApp } from "firebase-admin/app";
 
 initializeApp();
@@ -48,7 +48,7 @@ function fixControlChars(text: string): string {
 // ─── Rate limiting ───────────────────────────────────────────────────
 
 async function checkRateLimit(uid: string): Promise<void> {
-  const today = new Date().toISOString().slice(0, 10); // "2026-03-07"
+  const today = new Date().toISOString().slice(0, 10);
   const ref = db.collection("aiUsage").doc(uid);
   const doc = await ref.get();
 
@@ -91,14 +91,12 @@ export const generateQuestions = onCall(
     memory: "512MiB",
   },
   async (request) => {
-    // 1. Auth check
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Необходима авторизация");
     }
 
     const uid = request.auth.uid;
 
-    // 2. Role check — only moderator/admin
     const userDoc = await db.collection("users").doc(uid).get();
     const role = userDoc.data()?.role;
     if (role !== "moderator" && role !== "admin") {
@@ -108,7 +106,6 @@ export const generateQuestions = onCall(
       );
     }
 
-    // 3. Validate input
     const { topic, level, subject, count, language } =
       request.data as GenerateRequest;
 
@@ -131,10 +128,8 @@ export const generateQuestions = onCall(
       : "ru";
     const langLabel = LANG_PROMPT_LABELS[lang] ?? "русском";
 
-    // 4. Rate limit
     await checkRateLimit(uid);
 
-    // 5. Call Claude API
     const apiKey = claudeApiKey.value();
     const levelStr = level?.trim() || "10 класс";
     const maxTokens = MAX_TOKENS_BY_COUNT[count] ?? 4096;
@@ -184,7 +179,6 @@ JSON-экранирование: в строках двойной слэш — "
     const data = await response.json();
     const rawContent = data.content[0].text;
 
-    // 6. Parse response — prefill "[" means response continues from "["
     const fullJson = "[" + rawContent;
     const jsonMatch = fullJson.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
@@ -209,7 +203,6 @@ JSON-экранирование: в строках двойной слэш — "
       );
     }
 
-    // 7. Validate and fix
     for (const q of questions) {
       if (
         !q.text ||
@@ -232,7 +225,20 @@ JSON-экранирование: в строках двойной слэш — "
   }
 );
 
-// ─── Shuffle & grading utilities ─────────────────────────────────────
+// ─── Shuffle utilities ────────────────────────────────────────────────
+
+/**
+ * Unbiased Fisher-Yates shuffle — works for any array type.
+ * Replaces the biased sort(() => Math.random() - 0.5) pattern.
+ */
+function fisherYates<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 /**
  * Fisher-Yates shuffle for answer options.
@@ -250,6 +256,8 @@ function shuffleOptions(options: string[]): { shuffled: string[]; map: number[] 
   };
 }
 
+// ─── Grading utility ──────────────────────────────────────────────────
+
 /**
  * Server-side grading helper.
  * Uses optionsMap to convert shuffled selectedIndex back to original before comparing.
@@ -266,7 +274,6 @@ async function gradeAnswers(
   wrongQuestionIds: string[];
   gradedAnswers: { questionId: string; selectedIndex: number; correct: boolean }[];
 }> {
-  // Fetch correct answers from questions subcollection (admin SDK bypasses rules)
   const correctMap = new Map<string, number>();
   const CHUNK_SIZE = 30;
   for (let i = 0; i < questionIds.length; i += CHUNK_SIZE) {
@@ -275,7 +282,7 @@ async function gradeAnswers(
       .collection("tests")
       .doc(testId)
       .collection("questions")
-      .where("__name__", "in", chunk)
+      .where(FieldPath.documentId(), "in", chunk)
       .get();
     for (const d of snap.docs) {
       correctMap.set(d.id, d.data().correctIndex);
@@ -287,11 +294,12 @@ async function gradeAnswers(
     const answer = answers.find((a) => a.questionId === qId);
     const selectedIndex = answer?.selectedIndex ?? -1;
     const correctIndex = correctMap.get(qId);
+    const qMap = optionsMap?.[qId];
 
     // Map shuffled selectedIndex back to original index
     let originalSelectedIndex = selectedIndex;
-    if (optionsMap?.[qId] && selectedIndex >= 0 && selectedIndex < optionsMap[qId].length) {
-      originalSelectedIndex = optionsMap[qId][selectedIndex];
+    if (qMap && selectedIndex >= 0 && selectedIndex < qMap.length) {
+      originalSelectedIndex = qMap[selectedIndex];
     }
 
     return {
@@ -310,7 +318,17 @@ async function gradeAnswers(
   return { correctCount, score, total, wrongQuestionIds, gradedAnswers };
 }
 
+// ─── Shared types ─────────────────────────────────────────────────────
+
+interface ShuffledQuestion {
+  id: string;
+  text: string;
+  options: string[]; // already shuffled, no correctIndex
+}
+
 const CHUNK = 30;
+
+// ─── Cloud Function: startTest ────────────────────────────────────────
 
 export const startTest = onCall(
   { timeoutSeconds: 30 },
@@ -354,12 +372,12 @@ export const startTest = onCall(
     const resultId = `${uid}_${testId}`;
     const resultDoc = await db.collection("results").doc(resultId).get();
 
-    // 5a. Already completed
+    // ── 5a. Already completed ─────────────────────────────────────────
     if (resultDoc.exists && resultDoc.data()?.status === "completed") {
       return { phase: "already_completed" as const };
     }
 
-    // 5b. In progress — resume or expire
+    // ── 5b. In progress — resume or expire ────────────────────────────
     if (resultDoc.exists && resultDoc.data()?.status === "in_progress") {
       const resultData = resultDoc.data()!;
       const startedAt = resultData.startedAt?.toMillis?.() ?? Date.now();
@@ -368,11 +386,10 @@ export const startTest = onCall(
       const remaining = timeLimitSeconds - elapsed;
 
       const questionIds: string[] = resultData.questionIds || [];
+      const optionsMap: Record<string, number[]> | undefined = resultData.optionsMap;
 
-      const storedOptionsMap: Record<string, number[]> | undefined = resultData.optionsMap;
-
+      // Time expired — grade server-side using auto-saved answers
       if (remaining <= 0) {
-        // Time expired — grade server-side using auto-saved answers
         const savedAnswers = (resultData.answers || []).map(
           (a: { questionId: string; selectedIndex: number }) => ({
             questionId: a.questionId,
@@ -381,7 +398,7 @@ export const startTest = onCall(
         );
 
         const { correctCount, score, total, wrongQuestionIds, gradedAnswers } =
-          await gradeAnswers(resultData.testId, questionIds, savedAnswers, storedOptionsMap);
+          await gradeAnswers(resultData.testId, questionIds, savedAnswers, optionsMap);
 
         await db.collection("results").doc(resultId).update({
           answers: gradedAnswers,
@@ -395,36 +412,57 @@ export const startTest = onCall(
         return { phase: "finished" as const, score, correctCount, total };
       }
 
-      // Still time left — return questions for resume
-      const questions: { id: string; text: string; options: string[] }[] = [];
-      for (let i = 0; i < questionIds.length; i += CHUNK) {
-        const chunk = questionIds.slice(i, i + CHUNK);
-        const snap = await db
-          .collection("tests")
-          .doc(testId)
-          .collection("questions")
-          .where("__name__", "in", chunk)
-          .get();
-        for (const d of snap.docs) {
-          const qData = d.data();
-          questions.push({ id: d.id, text: qData.text, options: qData.options });
+      // Still time left — return stored shuffledQuestions directly
+      // NEW: no re-fetching from Firestore, no re-applying optionsMap
+      const shuffledQuestions: ShuffledQuestion[] = resultData.shuffledQuestions ?? [];
+
+      // Backward compat: old result docs don't have shuffledQuestions
+      // Fall back to re-fetch + re-apply optionsMap so old sessions still work
+      if (shuffledQuestions.length === 0 && questionIds.length > 0) {
+        const questions: ShuffledQuestion[] = [];
+        for (let i = 0; i < questionIds.length; i += CHUNK) {
+          const chunk = questionIds.slice(i, i + CHUNK);
+          const snap = await db
+            .collection("tests")
+            .doc(testId)
+            .collection("questions")
+            .where("__name__", "in", chunk)
+            .get();
+          for (const d of snap.docs) {
+            const qData = d.data();
+            questions.push({ id: d.id, text: qData.text, options: qData.options });
+          }
         }
+
+        const restored = questionIds
+          .map((qId) => {
+            const q = questions.find((qq) => qq.id === qId);
+            if (!q) return null;
+            const qMap = optionsMap?.[qId];
+            if (qMap) {
+              return { ...q, options: qMap.map((origIdx) => q.options[origIdx]) };
+            }
+            return q;
+          })
+          .filter((q): q is ShuffledQuestion => !!q);
+
+        const savedAnswers = (resultData.answers || []).map(
+          (a: { questionId: string; selectedIndex: number }) => ({
+            questionId: a.questionId,
+            selectedIndex: a.selectedIndex,
+          })
+        );
+
+        return {
+          phase: "testing" as const,
+          resultId,
+          questions: restored,
+          answers: savedAnswers,
+          remainingSeconds: remaining,
+        };
       }
 
-      // Sort to match stored order and apply options shuffle
-      const sortedQuestions = questionIds
-        .map((qId) => {
-          const q = questions.find((qq) => qq.id === qId);
-          if (!q) return null;
-          // Re-apply stored shuffle to options
-          const qMap = storedOptionsMap?.[qId];
-          if (qMap) {
-            return { ...q, options: qMap.map((origIdx) => q.options[origIdx]) };
-          }
-          return q;
-        })
-        .filter((q): q is { id: string; text: string; options: string[] } => !!q);
-
+      // NEW path: return stored shuffledQuestions directly — no re-mapping needed
       const savedAnswers = (resultData.answers || []).map(
         (a: { questionId: string; selectedIndex: number }) => ({
           questionId: a.questionId,
@@ -435,14 +473,15 @@ export const startTest = onCall(
       return {
         phase: "testing" as const,
         resultId,
-        questions: sortedQuestions,
+        questions: shuffledQuestions,
         answers: savedAnswers,
         remainingSeconds: remaining,
       };
     }
 
-    // 5c. No result — start new test
-    // Fetch all questions and select random subset
+    // ── 5c. No result — start new test ────────────────────────────────
+
+    // Fetch all questions from subcollection
     const allQuestionsSnap = await db
       .collection("tests")
       .doc(testId)
@@ -455,17 +494,16 @@ export const startTest = onCall(
       options: d.data().options as string[],
     }));
 
-    // Shuffle and select questions
-    const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, testData.questionCount);
+    // Unbiased Fisher-Yates shuffle for questions, then slice
+    const selected = fisherYates(allQuestions).slice(0, testData.questionCount);
     const questionIds = selected.map((q) => q.id);
 
     // Shuffle answer options for each question
     const optionsMap: Record<string, number[]> = {};
-    const questionsForStudent = selected.map((q) => {
-      const { shuffled: shuffledOpts, map } = shuffleOptions(q.options);
+    const shuffledQuestions: ShuffledQuestion[] = selected.map((q) => {
+      const { shuffled, map } = shuffleOptions(q.options);
       optionsMap[q.id] = map;
-      return { id: q.id, text: q.text, options: shuffledOpts };
+      return { id: q.id, text: q.text, options: shuffled };
     });
 
     // Get quarter info from test bank
@@ -480,7 +518,7 @@ export const startTest = onCall(
       }
     }
 
-    // Create result record
+    // Create result — store shuffledQuestions + optionsMap
     await db.collection("results").doc(resultId).set({
       testId,
       studentId: uid,
@@ -492,7 +530,8 @@ export const startTest = onCall(
       subject: testData.subject,
       testBankId: testData.testBankId,
       questionIds,
-      optionsMap,
+      shuffledQuestions, // ← stored once, returned as-is on every resume
+      optionsMap,        // ← used only for grading, never reconstructing view
       startedAt: FieldValue.serverTimestamp(),
       status: "in_progress",
       answers: [],
@@ -504,7 +543,7 @@ export const startTest = onCall(
     return {
       phase: "testing" as const,
       resultId,
-      questions: questionsForStudent,
+      questions: shuffledQuestions,
       remainingSeconds: testData.timeLimit * 60,
     };
   }
@@ -553,11 +592,10 @@ export const submitTest = onCall(
     const testDoc = await db.collection("tests").doc(resultData.testId).get();
     const timeLimitSeconds = (testDoc.data()?.timeLimit ?? 40) * 60;
     const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-    const GRACE_PERIOD = 30; // 30 seconds grace for network latency
+    const GRACE_PERIOD = 30;
 
     const isWithinTime = elapsed <= timeLimitSeconds + GRACE_PERIOD;
 
-    // Use submitted answers if within time, otherwise use auto-saved answers from DB
     const answersToGrade = isWithinTime
       ? answers
       : (resultData.answers || []).map(
@@ -567,9 +605,10 @@ export const submitTest = onCall(
           })
         );
 
-    // 6. Grade (pass optionsMap for index mapping)
+    // 6. Grade using optionsMap for index back-mapping
     const questionIds: string[] = resultData.questionIds || [];
     const resultOptionsMap: Record<string, number[]> | undefined = resultData.optionsMap;
+
     const { correctCount, score, total, wrongQuestionIds, gradedAnswers } =
       await gradeAnswers(resultData.testId, questionIds, answersToGrade, resultOptionsMap);
 
@@ -601,7 +640,6 @@ export const migrateResultsData = onCall(
       throw new HttpsError("permission-denied", "Только администратор");
     }
 
-    // 1. Build test lookup map
     const testsSnap = await db.collection("tests").get();
     const testMap = new Map<
       string,
@@ -617,7 +655,6 @@ export const migrateResultsData = onCall(
       });
     }
 
-    // 2. Migrate results
     const resultsSnap = await db.collection("results").get();
     let resultsUpdated = 0;
     let resultsSkipped = 0;
@@ -657,7 +694,6 @@ export const migrateResultsData = onCall(
 
     if (batchCount > 0) await batch.commit();
 
-    // 3. Migrate classes — add classLevel parsed from name
     const classesSnap = await db.collection("classes").get();
     let classesUpdated = 0;
     batch = db.batch();
@@ -692,13 +728,60 @@ export const migrateResultsData = onCall(
   }
 );
 
-// ─── Existing: cleanup on user delete ────────────────────────────────
+// ─── One-time migration: delete legacy in_progress results without shuffledQuestions ──
 
-/**
- * When a user document is deleted from Firestore,
- * automatically delete the corresponding Firebase Auth account.
- * This prevents orphaned Auth accounts from accumulating.
- */
+export const cleanupOldResults = onCall(
+  { timeoutSeconds: 540, memory: "256MiB" },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Необходима авторизация");
+    }
+
+    const userDoc = await db.collection("users").doc(request.auth.uid).get();
+    if (userDoc.data()?.role !== "admin") {
+      throw new HttpsError("permission-denied", "Только администратор");
+    }
+
+    const { dryRun = false } = (request.data ?? {}) as { dryRun?: boolean };
+
+    // Firestore cannot query "field does not exist" directly —
+    // fetch all in_progress and filter in memory.
+    const snap = await db
+      .collection("results")
+      .where("status", "==", "in_progress")
+      .get();
+
+    const toDelete = snap.docs.filter(
+      (d) => !d.data().shuffledQuestions
+    );
+
+    if (dryRun) {
+      return {
+        dryRun: true,
+        found: toDelete.length,
+        total: snap.size,
+        ids: toDelete.map((d) => d.id),
+      };
+    }
+
+    // Delete in batches of 500 (Firestore limit)
+    const BATCH_SIZE = 500;
+    let deleted = 0;
+    for (let i = 0; i < toDelete.length; i += BATCH_SIZE) {
+      const batch = db.batch();
+      toDelete.slice(i, i + BATCH_SIZE).forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+      deleted += Math.min(BATCH_SIZE, toDelete.length - i);
+    }
+
+    console.log(`cleanupOldResults: deleted ${deleted} legacy in_progress docs`);
+
+    return { dryRun: false, deleted, total: snap.size };
+  }
+);
+
+// ─── Trigger: cleanup on user delete ─────────────────────────────────
+
 export const onUserDeleted = onDocumentDeleted("users/{uid}", async (event) => {
   const uid = event.params.uid;
 
@@ -706,7 +789,6 @@ export const onUserDeleted = onDocumentDeleted("users/{uid}", async (event) => {
     await getAuth().deleteUser(uid);
     console.log(`Auth account deleted for uid: ${uid}`);
   } catch (err: unknown) {
-    // auth/user-not-found is fine — account may have been deleted already
     if (
       err instanceof Object &&
       "code" in err &&

@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
 import {
   getClass, getTests, getUsers, getTestBanks,
   assignTestToClass, removeTestFromClass,
-  removeStudentFromClass, createStudentsBulk,
+  removeStudentFromClass, createStudentsBulk, deleteClass,
 } from '@/services/db'
 import { useToast } from '@/context/ToastContext'
+import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
@@ -14,6 +15,8 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
 export function ClassDetailPage({ backTo, backLabel }: { backTo: string; backLabel: string }) {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const { user } = useAuth()
   const { data: cls, loading: loadingClass, refetch } = useFirestoreQuery(
     () => getClass(id!),
     [id]
@@ -39,9 +42,13 @@ export function ClassDetailPage({ backTo, backLabel }: { backTo: string; backLab
 
   // Remove student
   const [confirmRemove, setConfirmRemove] = useState<{ studentId: string; studentName: string } | null>(null)
+  const [confirmDeleteClass, setConfirmDeleteClass] = useState(false)
 
   const classStudents = allStudents?.filter((s) => cls?.studentIds?.includes(s.uid)) ?? []
   const alreadyAssigned = new Set(cls?.assignedTests ?? [])
+  const canDeleteClass =
+    user?.role === 'admin' ||
+    (user?.role === 'moderator' && cls?.createdBy === user?.uid)
 
   // Tests in selected bank (published only, not already assigned)
   const bankTests = tests
@@ -148,6 +155,17 @@ export function ClassDetailPage({ backTo, backLabel }: { backTo: string; backLab
     }
   }
 
+  const handleDeleteClass = async () => {
+    if (!cls) return
+    try {
+      await deleteClass(cls.id)
+      showSuccess('Класс удалён')
+      navigate(backTo)
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Ошибка удаления')
+    }
+  }
+
   const handlePrintCredentials = () => {
     if (classStudents.length === 0) return
     const rows = classStudents
@@ -197,6 +215,11 @@ export function ClassDetailPage({ backTo, backLabel }: { backTo: string; backLab
         </Link>
         <span className="text-gray-400">/</span>
         <h1 className="text-2xl font-bold text-gray-900">{cls.name}</h1>
+        {canDeleteClass && (
+          <Button variant="danger" className="text-xs ml-auto" onClick={() => setConfirmDeleteClass(true)}>
+            Удалить класс
+          </Button>
+        )}
       </div>
 
       {/* Students Section */}
@@ -279,9 +302,13 @@ export function ClassDetailPage({ backTo, backLabel }: { backTo: string; backLab
 
         {cls.assignedTests?.length > 0 ? (
           <div className="flex flex-col gap-2">
-            {cls.assignedTests.map((testId) => (
+            {cls.assignedTests.map((testId) => {
+              const testExists = tests?.some((t) => t.id === testId)
+              return (
               <div key={testId} className="flex items-center justify-between text-sm bg-gray-50 px-4 py-3 rounded-lg">
-                <span className="text-gray-900">{getTestTitle(testId)}</span>
+                <span className={testExists ? 'text-gray-900' : 'text-red-400 italic'}>
+                  {testExists ? getTestTitle(testId) : 'Тест удалён'}
+                </span>
                 <button
                   onClick={() => handleRemoveTest(testId)}
                   className="text-red-500 hover:text-red-700 text-xs cursor-pointer"
@@ -289,7 +316,8 @@ export function ClassDetailPage({ backTo, backLabel }: { backTo: string; backLab
                   Убрать
                 </button>
               </div>
-            ))}
+              )
+            })}
           </div>
         ) : (
           <p className="text-sm text-gray-400">Нет назначенных тестов</p>
@@ -427,6 +455,17 @@ export function ClassDetailPage({ backTo, backLabel }: { backTo: string; backLab
           <div className="flex justify-end">
             <Button onClick={() => { setCredentialsModalOpen(false); setCreatedStudents([]); setBulkErrors([]) }}>Закрыть</Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Delete Class Confirmation */}
+      <Modal isOpen={confirmDeleteClass} onClose={() => setConfirmDeleteClass(false)} title="Удалить класс?">
+        <p className="text-sm text-gray-600 mb-4">
+          Класс <strong>{cls.name}</strong> будет удалён. Ученики класса не будут удалены, но потеряют привязку к классу.
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setConfirmDeleteClass(false)}>Отмена</Button>
+          <Button variant="danger" onClick={handleDeleteClass}>Удалить</Button>
         </div>
       </Modal>
 

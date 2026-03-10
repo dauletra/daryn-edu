@@ -36,6 +36,7 @@ export interface Class {
   classLevel?: ClassLevel
   studentIds: string[]
   assignedTests: string[]
+  createdBy?: string
 }
 
 export interface TestBank {
@@ -109,6 +110,10 @@ export interface TestResult {
   submittedAt?: Timestamp | Date
   status: 'in_progress' | 'completed'
   questionIds: string[]
+  /** What the student sees — shuffled options, stored once at test start */
+  shuffledQuestions?: StudentQuestion[]
+  /** map[shuffledPos] = originalPos — used only for server-side grading */
+  optionsMap?: Record<string, number[]>
   answers: Answer[]
   wrongQuestionIds: string[]
   correctCount: number

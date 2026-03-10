@@ -182,6 +182,16 @@ export function AdminResultsPage() {
                                 if (!question) return null
                                 const isCorrect = answer?.correct ?? false
 
+                                // Show everything in the student's shuffled view context
+                                const shuffledQ = result.shuffledQuestions?.find((q) => q.id === qId)
+                                const oMap = result.optionsMap?.[qId]
+                                const selectedIdx = answer?.selectedIndex ?? -1
+                                // Find which shuffled position the correct answer ended up at
+                                const correctShuffledPos = oMap
+                                  ? oMap.indexOf(question.correctIndex)
+                                  : question.correctIndex
+                                const safeCorrectPos = correctShuffledPos >= 0 ? correctShuffledPos : question.correctIndex
+
                                 return (
                                   <div
                                     key={qId}
@@ -192,13 +202,13 @@ export function AdminResultsPage() {
                                     <p className="font-medium text-gray-900 mb-1"><MathText text={question.text} /></p>
                                     <div className="flex gap-4 flex-wrap">
                                       <span className={isCorrect ? 'text-green-700' : 'text-red-700'}>
-                                        Ответ ученика: {answer && answer.selectedIndex >= 0
-                                          ? <>{String.fromCharCode(65 + answer.selectedIndex)}. <MathText text={question.options[answer.selectedIndex]} /></>
+                                        Ответ ученика: {selectedIdx >= 0
+                                          ? <>{String.fromCharCode(65 + selectedIdx)}. <MathText text={shuffledQ?.options[selectedIdx] ?? question.options[selectedIdx]} /></>
                                           : 'Без ответа'}
                                       </span>
                                       {!isCorrect && (
                                         <span className="text-green-700">
-                                          Правильный: {String.fromCharCode(65 + question.correctIndex)}. <MathText text={question.options[question.correctIndex]} />
+                                          Правильный: {String.fromCharCode(65 + safeCorrectPos)}. <MathText text={shuffledQ?.options[safeCorrectPos] ?? question.options[question.correctIndex]} />
                                         </span>
                                       )}
                                     </div>

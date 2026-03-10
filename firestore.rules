@@ -41,7 +41,7 @@ service cloud.firestore {
     match /classes/{classId} {
       allow read: if isAuth();
       allow create, update: if isAdmin() || isModerator();
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || (isModerator() && resource.data.createdBy == request.auth.uid);
     }
 
     // Test Banks collection
@@ -81,7 +81,7 @@ service cloud.firestore {
         && resource.data.studentId == request.auth.uid
         && resource.data.status == 'in_progress'
         && !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny(['status', 'score', 'correctCount', 'wrongQuestionIds', 'submittedAt', 'startedAt', 'questionIds', 'testId', 'studentId', 'classId', 'optionsMap']);
+            .hasAny(['status', 'score', 'correctCount', 'wrongQuestionIds', 'submittedAt', 'startedAt', 'questionIds', 'testId', 'studentId', 'classId', 'optionsMap', 'shuffledQuestions']);
       allow delete: if isModerator() || isAdmin();
     }
 

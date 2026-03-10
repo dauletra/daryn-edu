@@ -224,7 +224,7 @@ export async function getClass(classId: string): Promise<Class | null> {
   return { id: docSnap.id, ...docSnap.data() } as Class
 }
 
-export async function createClass(name: string): Promise<string> {
+export async function createClass(name: string, createdBy: string): Promise<string> {
   const match = name.match(/^(\d+)/)
   const level = match ? parseInt(match[1], 10) : undefined
   const classLevel = level && [7, 8, 9, 10, 11].includes(level) ? level : undefined
@@ -233,6 +233,7 @@ export async function createClass(name: string): Promise<string> {
     ...(classLevel !== undefined && { classLevel }),
     studentIds: [],
     assignedTests: [],
+    createdBy,
   })
   return docRef.id
 }
@@ -242,6 +243,17 @@ export async function updateClass(id: string, data: Partial<Pick<Class, 'name'>>
 }
 
 export async function deleteClass(id: string): Promise<void> {
+  const classDoc = await getDoc(doc(db, 'classes', id))
+  if (classDoc.exists()) {
+    const studentIds: string[] = classDoc.data().studentIds ?? []
+    if (studentIds.length > 0) {
+      const batch = writeBatch(db)
+      studentIds.forEach((uid) => {
+        batch.update(doc(db, 'users', uid), { classId: '' })
+      })
+      await batch.commit()
+    }
+  }
   await deleteDoc(doc(db, 'classes', id))
 }
 
@@ -381,6 +393,17 @@ export async function deleteTest(id: string): Promise<void> {
   questionsSnap.docs.forEach((d) => batch.delete(d.ref))
   batch.delete(doc(db, 'tests', id))
   await batch.commit()
+
+  const classesSnap = await getDocs(
+    query(collection(db, 'classes'), where('assignedTests', 'array-contains', id))
+  )
+  if (classesSnap.size > 0) {
+    const cleanupBatch = writeBatch(db)
+    classesSnap.docs.forEach((classDoc) => {
+      cleanupBatch.update(classDoc.ref, { assignedTests: arrayRemove(id) })
+    })
+    await cleanupBatch.commit()
+  }
 }
 
 // ---- Questions (subcollection) ----
@@ -457,30 +480,9 @@ export async function getQuestionsCount(testId: string): Promise<number> {
 
 // ---- Results ----
 
-export async function createResult(data: {
-  testId: string
-  studentId: string
-  classId: string
-  quarter: string
-  year: number
-  questionIds: string[]
-  classLevel: ClassLevel
-  subjectId: string
-  subject: string
-  testBankId: string
-}): Promise<string> {
-  const id = `${data.studentId}_${data.testId}`
-  await setDoc(doc(db, 'results', id), {
-    ...data,
-    startedAt: serverTimestamp(),
-    status: 'in_progress',
-    answers: [],
-    wrongQuestionIds: [],
-    correctCount: 0,
-    score: 0,
-  })
-  return id
-}
+// NOTE: createResult() is intentionally removed.
+// Result documents are created exclusively by the startTest Cloud Function,
+// which ensures shuffledQuestions and optionsMap are always present.
 
 export async function getResult(studentId: string, testId: string): Promise<TestResult | null> {
   const docSnap = await getDoc(doc(db, 'results', `${studentId}_${testId}`))
@@ -631,6 +633,26 @@ export async function submitTestFn(
   answers: { questionId: string; selectedIndex: number }[]
 ): Promise<SubmitTestResponse> {
   const result = await submitTestCallable({ resultId, answers })
+  return result.data
+}
+
+// ---- cleanupOldResults (admin only) ----
+
+interface CleanupOldResultsResponse {
+  dryRun: boolean
+  found?: number   // present when dryRun=true
+  deleted?: number // present when dryRun=false
+  total: number
+  ids?: string[]   // present when dryRun=true
+}
+
+const cleanupOldResultsCallable = httpsCallable<
+  { dryRun?: boolean },
+  CleanupOldResultsResponse
+>(functions, 'cleanupOldResults')
+
+export async function cleanupOldResultsFn(dryRun = false): Promise<CleanupOldResultsResponse> {
+  const result = await cleanupOldResultsCallable({ dryRun })
   return result.data
 }
 
