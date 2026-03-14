@@ -13,6 +13,7 @@
     "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes"
   },
   "dependencies": {
+    "exceljs": "^4.4.0",
     "firebase": "^12.10.0",
     "katex": "^0.16.33",
     "react": "^19.2.0",
