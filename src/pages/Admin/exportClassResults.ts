@@ -1,11 +1,8 @@
 import ExcelJS from 'exceljs'
 import type { TestResult, AppUser, TestBank } from '@/types'
+import { getGrade } from '@/utils/scoreUtils'
 
 export interface SubjectMeta { subjectId: string; subjectName: string }
-
-function getGrade(score: number) {
-  return score >= 85 ? 5 : score >= 65 ? 4 : score >= 41 ? 3 : 2
-}
 
 // ─── Shared style helpers ────────────────────────────────────────────────────
 

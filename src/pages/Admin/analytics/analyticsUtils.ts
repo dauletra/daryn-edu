@@ -1,67 +1,52 @@
 import type { TestResult, Class, AppUser, ClassLevel } from '@/types'
+import { getGrade } from '@/utils/scoreUtils'
 
-export interface AggregatedStats {
-  totalResults: number
-  avgScore: number
-  maxScore: number
-  minScore: number
-}
-
-export interface GradeLevelRow extends AggregatedStats {
-  classLevel: ClassLevel
-  classCount: number
-  studentCount: number
-}
-
-export interface ClassRow extends AggregatedStats {
+export interface ClassRow {
   classId: string
   className: string
   classLevel: ClassLevel | undefined
-  studentCount: number
+  enrolledStudents: number
+  uniqueStudents: number
+  avgScore: number
+  avgGrade: number
 }
 
-export interface SubjectRow extends AggregatedStats {
+export interface SubjectRow {
   subjectId: string
   subjectName: string
+  uniqueStudents: number
+  avgScore: number
+  avgGrade: number
 }
 
-export function computeStats(results: TestResult[]): AggregatedStats | null {
-  if (results.length === 0) return null
-  const scores = results.map((r) => r.score)
-  return {
-    totalResults: results.length,
-    avgScore: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
-    maxScore: Math.max(...scores),
-    minScore: Math.min(...scores),
-  }
+export interface OverallStats {
+  uniqueStudents: number
+  enrolledStudents: number
+  avgScore: number
 }
 
-export function groupByClassLevel(
+
+function avgScoreOf(results: TestResult[]) {
+  if (results.length === 0) return 0
+  return Math.round(results.reduce((a, r) => a + r.score, 0) / results.length)
+}
+
+function avgGradeOf(results: TestResult[]) {
+  if (results.length === 0) return 0
+  return Number((results.reduce((a, r) => a + getGrade(r.score), 0) / results.length).toFixed(1))
+}
+
+export function computeOverallStats(
   results: TestResult[],
-  classes: Class[],
   students: AppUser[]
-): GradeLevelRow[] {
-  const levels: ClassLevel[] = [7, 8, 9, 10, 11]
-
-  return levels
-    .map((level) => {
-      const levelResults = results.filter((r) => r.classLevel === level)
-      const levelClasses = classes.filter((c) => c.classLevel === level)
-      const levelClassIds = new Set(levelClasses.map((c) => c.id))
-      const levelStudentCount = students.filter((s) => s.classId && levelClassIds.has(s.classId)).length
-      const stats = computeStats(levelResults)
-
-      return {
-        classLevel: level,
-        classCount: levelClasses.length,
-        studentCount: levelStudentCount,
-        totalResults: stats?.totalResults ?? 0,
-        avgScore: stats?.avgScore ?? 0,
-        maxScore: stats?.maxScore ?? 0,
-        minScore: stats?.minScore ?? 0,
-      }
-    })
-    .filter((row) => row.totalResults > 0)
+): OverallStats | null {
+  if (results.length === 0) return null
+  const uniqueStudents = new Set(results.map((r) => r.studentId)).size
+  return {
+    uniqueStudents,
+    enrolledStudents: students.length,
+    avgScore: avgScoreOf(results),
+  }
 }
 
 export function groupByClass(
@@ -72,25 +57,25 @@ export function groupByClass(
   return classes
     .map((cls) => {
       const classResults = results.filter((r) => r.classId === cls.id)
-      const classStudentCount = students.filter((s) => s.classId === cls.id).length
-      const stats = computeStats(classResults)
+      if (classResults.length === 0) return null
+      const enrolledStudents = students.filter((s) => s.classId === cls.id).length
+      const uniqueStudents = new Set(classResults.map((r) => r.studentId)).size
 
       return {
         classId: cls.id,
         className: cls.name,
         classLevel: cls.classLevel,
-        studentCount: classStudentCount,
-        totalResults: stats?.totalResults ?? 0,
-        avgScore: stats?.avgScore ?? 0,
-        maxScore: stats?.maxScore ?? 0,
-        minScore: stats?.minScore ?? 0,
+        enrolledStudents,
+        uniqueStudents,
+        avgScore: avgScoreOf(classResults),
+        avgGrade: avgGradeOf(classResults),
       }
     })
-    .filter((row) => row.totalResults > 0)
+    .filter((row): row is ClassRow => row !== null)
     .sort((a, b) => a.className.localeCompare(b.className))
 }
 
-export function groupBySubject(results: TestResult[]): SubjectRow[] {
+export function groupBySubject(results: TestResult[], students: AppUser[]): SubjectRow[] {
   const bySubject = new Map<string, TestResult[]>()
 
   for (const r of results) {
@@ -100,13 +85,12 @@ export function groupBySubject(results: TestResult[]): SubjectRow[] {
   }
 
   return Array.from(bySubject.entries())
-    .map(([subjectId, subResults]) => {
-      const stats = computeStats(subResults)!
-      return {
-        subjectId,
-        subjectName: subResults[0].subject,
-        ...stats,
-      }
-    })
+    .map(([subjectId, subResults]) => ({
+      subjectId,
+      subjectName: subResults[0].subject,
+      uniqueStudents: new Set(subResults.map((r) => r.studentId)).size,
+      avgScore: avgScoreOf(subResults),
+      avgGrade: avgGradeOf(subResults),
+    }))
     .sort((a, b) => a.subjectName.localeCompare(b.subjectName))
 }

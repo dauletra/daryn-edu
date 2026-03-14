@@ -1,18 +1,12 @@
 import { useState, useMemo } from 'react'
 import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
-import {
-  getClasses, getUsers, getTestBanks, getSubjects, getResultsByBank,
-} from '@/services/db'
+import { getClasses, getUsers, getTestBanks, getSubjects, getResultsByBank } from '@/services/db'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import type { ClassLevel, TestResult } from '@/types'
-import {
-  computeStats,
-  groupByClassLevel,
-  groupByClass,
-  groupBySubject,
-} from './analytics/analyticsUtils'
+import { computeOverallStats, groupByClass, groupBySubject } from './analytics/analyticsUtils'
+import { getScoreColor, getGradeColor } from '@/utils/scoreUtils'
 
-type Tab = 'grades' | 'classes' | 'subjects'
+type Tab = 'classes' | 'subjects'
 
 export function AdminAnalyticsPage() {
   const { data: classes, loading: loadingClasses } = useFirestoreQuery(() => getClasses())
@@ -22,11 +16,9 @@ export function AdminAnalyticsPage() {
 
   const [selectedBankId, setSelectedBankId] = useState('')
   const [filterClassLevel, setFilterClassLevel] = useState<ClassLevel | ''>('')
-  const [filterClassId, setFilterClassId] = useState('')
   const [filterSubjectId, setFilterSubjectId] = useState('')
-  const [activeTab, setActiveTab] = useState<Tab>('grades')
+  const [activeTab, setActiveTab] = useState<Tab>('classes')
 
-  // Load results for selected bank
   const { data: bankResults, loading: loadingResults } = useFirestoreQuery(
     () => selectedBankId ? getResultsByBank(selectedBankId) : Promise.resolve([]),
     [selectedBankId]
@@ -39,24 +31,27 @@ export function AdminAnalyticsPage() {
     return classes.filter((c) => c.classLevel === filterClassLevel)
   }, [classes, filterClassLevel])
 
-  // Apply client-side filters (grade, class, subject)
+  // Apply client-side filters
   const filteredResults = useMemo(() => {
     if (!bankResults) return []
-    return bankResults.filter((r: TestResult) => {
+    return (bankResults as TestResult[]).filter((r) => {
       if (filterClassLevel && r.classLevel !== filterClassLevel) return false
-      if (filterClassId && r.classId !== filterClassId) return false
       if (filterSubjectId && r.subjectId !== filterSubjectId) return false
       return true
     })
-  }, [bankResults, filterClassLevel, filterClassId, filterSubjectId])
+  }, [bankResults, filterClassLevel, filterSubjectId])
 
-  // Overall stats
-  const overallStats = useMemo(() => computeStats(filteredResults), [filteredResults])
+  // Enrolled students matching the parallel filter
+  const filteredStudents = useMemo(() => {
+    if (!students) return []
+    if (!filterClassLevel) return students
+    const classIds = new Set(filteredClasses.map((c) => c.id))
+    return students.filter((s) => s.classId && classIds.has(s.classId))
+  }, [students, filteredClasses, filterClassLevel])
 
-  // Tab data
-  const gradeLevelRows = useMemo(
-    () => groupByClassLevel(filteredResults, classes ?? [], students ?? []),
-    [filteredResults, classes, students]
+  const overallStats = useMemo(
+    () => computeOverallStats(filteredResults, filteredStudents),
+    [filteredResults, filteredStudents]
   )
 
   const classRows = useMemo(
@@ -65,16 +60,9 @@ export function AdminAnalyticsPage() {
   )
 
   const subjectRows = useMemo(
-    () => groupBySubject(filteredResults),
-    [filteredResults]
+    () => groupBySubject(filteredResults, students ?? []),
+    [filteredResults, students]
   )
-
-  // Reset dependent filters
-  const handleClassLevelChange = (value: string) => {
-    const level = value ? (Number(value) as ClassLevel) : ''
-    setFilterClassLevel(level)
-    setFilterClassId('')
-  }
 
   const CLASS_LEVELS: ClassLevel[] = [7, 8, 9, 10, 11]
 
@@ -108,26 +96,15 @@ export function AdminAnalyticsPage() {
               <label className="text-sm text-gray-600">Параллель:</label>
               <select
                 value={filterClassLevel}
-                onChange={(e) => handleClassLevelChange(e.target.value)}
+                onChange={(e) => {
+                  const level = e.target.value ? (Number(e.target.value) as ClassLevel) : ''
+                  setFilterClassLevel(level)
+                }}
                 className="px-2 py-1 border border-gray-300 rounded-lg text-sm"
               >
                 <option value="">Все</option>
                 {CLASS_LEVELS.map((l) => (
                   <option key={l} value={l}>{l} класс</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600">Класс:</label>
-              <select
-                value={filterClassId}
-                onChange={(e) => setFilterClassId(e.target.value)}
-                className="px-2 py-1 border border-gray-300 rounded-lg text-sm"
-              >
-                <option value="">Все</option>
-                {filteredClasses.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>
@@ -157,22 +134,27 @@ export function AdminAnalyticsPage() {
         <>
           {/* Overall Stats Cards */}
           {overallStats && (
-            <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-3 gap-4 mb-6">
               <div className="bg-white rounded-lg p-3 shadow-sm">
-                <div className="text-2xl font-bold text-gray-900">{overallStats.totalResults}</div>
-                <div className="text-xs text-gray-500">Всего сдано</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {overallStats.uniqueStudents}
+                  {overallStats.enrolledStudents > 0 && (
+                    <span className="text-base font-normal text-gray-400"> / {overallStats.enrolledStudents}</span>
+                  )}
+                </div>
+                <div className="text-xs text-gray-500">Учеников сдали</div>
               </div>
               <div className="bg-white rounded-lg p-3 shadow-sm">
-                <div className="text-2xl font-bold text-blue-600">{overallStats.avgScore}%</div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {overallStats.enrolledStudents > 0
+                    ? Math.round(overallStats.uniqueStudents / overallStats.enrolledStudents * 100)
+                    : 0}%
+                </div>
+                <div className="text-xs text-gray-500">Охват учеников</div>
+              </div>
+              <div className="bg-white rounded-lg p-3 shadow-sm">
+                <div className="text-2xl font-bold text-gray-900">{overallStats.avgScore}%</div>
                 <div className="text-xs text-gray-500">Средний балл</div>
-              </div>
-              <div className="bg-white rounded-lg p-3 shadow-sm">
-                <div className="text-2xl font-bold text-green-600">{overallStats.maxScore}%</div>
-                <div className="text-xs text-gray-500">Лучший результат</div>
-              </div>
-              <div className="bg-white rounded-lg p-3 shadow-sm">
-                <div className="text-2xl font-bold text-red-600">{overallStats.minScore}%</div>
-                <div className="text-xs text-gray-500">Худший результат</div>
               </div>
             </div>
           )}
@@ -180,7 +162,6 @@ export function AdminAnalyticsPage() {
           {/* Tabs */}
           <div className="flex gap-1 mb-4 border-b border-gray-200">
             {([
-              { key: 'grades' as Tab, label: 'По параллелям' },
               { key: 'classes' as Tab, label: 'По классам' },
               { key: 'subjects' as Tab, label: 'По предметам' },
             ]).map(({ key, label }) => (
@@ -199,47 +180,6 @@ export function AdminAnalyticsPage() {
           </div>
 
           {/* Tab Content */}
-          {activeTab === 'grades' && (
-            gradeLevelRows.length > 0 ? (
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Параллель</th>
-                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Классов</th>
-                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Учеников</th>
-                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Тестов сдано</th>
-                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Средний балл</th>
-                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Лучший</th>
-                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Худший</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {gradeLevelRows.map((row) => (
-                      <tr key={row.classLevel} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{row.classLevel} класс</td>
-                        <td className="px-4 py-3 text-sm text-gray-600 text-center">{row.classCount}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600 text-center">{row.studentCount}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600 text-center">{row.totalResults}</td>
-                        <td className="px-4 py-3 text-center">
-                          <ScoreBadge score={row.avgScore} />
-                        </td>
-                        <td className="px-4 py-3 text-sm text-center">
-                          <span className="text-green-600 font-medium">{row.maxScore}%</span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-center">
-                          <span className="text-red-600 font-medium">{row.minScore}%</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-8">Нет данных для отображения</p>
-            )
-          )}
-
           {activeTab === 'classes' && (
             classRows.length > 0 ? (
               <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -247,27 +187,26 @@ export function AdminAnalyticsPage() {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Класс</th>
-                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Учеников</th>
-                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Тестов сдано</th>
+                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Охват</th>
                       <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Средний балл</th>
-                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Лучший</th>
-                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Худший</th>
+                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Средняя оценка</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {classRows.map((row) => (
                       <tr key={row.classId} className="hover:bg-gray-50">
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">{row.className}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600 text-center">{row.studentCount}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600 text-center">{row.totalResults}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 text-center">
+                          {row.uniqueStudents}
+                          {row.enrolledStudents > 0 && (
+                            <span className="text-gray-400"> / {row.enrolledStudents}</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-center">
                           <ScoreBadge score={row.avgScore} />
                         </td>
-                        <td className="px-4 py-3 text-sm text-center">
-                          <span className="text-green-600 font-medium">{row.maxScore}%</span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-center">
-                          <span className="text-red-600 font-medium">{row.minScore}%</span>
+                        <td className="px-4 py-3 text-center">
+                          <GradeBadge grade={row.avgGrade} />
                         </td>
                       </tr>
                     ))}
@@ -286,25 +225,21 @@ export function AdminAnalyticsPage() {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Предмет</th>
-                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Тестов сдано</th>
+                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Учеников сдали</th>
                       <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Средний балл</th>
-                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Лучший</th>
-                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Худший</th>
+                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Средняя оценка</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {subjectRows.map((row) => (
                       <tr key={row.subjectId} className="hover:bg-gray-50">
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">{row.subjectName}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600 text-center">{row.totalResults}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 text-center">{row.uniqueStudents}</td>
                         <td className="px-4 py-3 text-center">
                           <ScoreBadge score={row.avgScore} />
                         </td>
-                        <td className="px-4 py-3 text-sm text-center">
-                          <span className="text-green-600 font-medium">{row.maxScore}%</span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-center">
-                          <span className="text-red-600 font-medium">{row.minScore}%</span>
+                        <td className="px-4 py-3 text-center">
+                          <GradeBadge grade={row.avgGrade} />
                         </td>
                       </tr>
                     ))}
@@ -322,15 +257,17 @@ export function AdminAnalyticsPage() {
 }
 
 function ScoreBadge({ score }: { score: number }) {
-  const color = score >= 70
-    ? 'bg-green-100 text-green-800'
-    : score >= 50
-      ? 'bg-yellow-100 text-yellow-800'
-      : 'bg-red-100 text-red-800'
-
   return (
-    <span className={`inline-block px-2 py-0.5 rounded text-sm font-medium ${color}`}>
+    <span className={`inline-block px-2 py-0.5 rounded text-sm font-medium ${getScoreColor(score)}`}>
       {score}%
+    </span>
+  )
+}
+
+function GradeBadge({ grade }: { grade: number }) {
+  return (
+    <span className={`inline-block px-2 py-0.5 rounded text-sm font-medium ${getGradeColor(grade)}`}>
+      {grade}
     </span>
   )
 }

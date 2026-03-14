@@ -3,6 +3,7 @@ import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
 import { getClasses, getUsers, getTestBanks, getResultsByBank } from '@/services/db'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { exportClassResults } from './exportClassResults'
+import { getGrade, getScoreColor, getGradeColor } from '@/utils/scoreUtils'
 import type { TestResult, AppUser } from '@/types'
 
 export function AdminResultsPage() {
@@ -377,10 +378,7 @@ function SubjectView({ bankResults, classId, subjectId, className, classStudents
           const withResults = rows.filter((r) => r.result !== null)
           if (withResults.length === 0) return null
           const avgScore = Math.round(withResults.reduce((a, r) => a + r.result!.score, 0) / withResults.length)
-          const avgGrade = (withResults.reduce((a, r) => {
-            const s = r.result!.score
-            return a + (s >= 85 ? 5 : s >= 65 ? 4 : s >= 41 ? 3 : 2)
-          }, 0) / withResults.length).toFixed(1)
+          const avgGrade = (withResults.reduce((a, r) => a + getGrade(r.result!.score), 0) / withResults.length).toFixed(1)
           const totalCorrect = withResults.reduce((a, r) => a + r.result!.correctCount, 0)
           return (
             <tfoot className="bg-gray-50 border-t-2 border-gray-200">
@@ -409,27 +407,17 @@ function SubjectView({ bankResults, classId, subjectId, className, classStudents
 // ─── Shared UI components ────────────────────────────────────────────────────
 
 function ScoreBadge({ score }: { score: number }) {
-  const color =
-    score >= 85 ? 'bg-blue-100 text-blue-800' :
-    score >= 65 ? 'bg-green-100 text-green-800' :
-    score >= 41 ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
   return (
-    <span className={`inline-block px-2 py-0.5 rounded text-sm font-medium ${color}`}>
+    <span className={`inline-block px-2 py-0.5 rounded text-sm font-medium ${getScoreColor(score)}`}>
       {score}%
     </span>
   )
 }
 
 function GradeBadge({ score }: { score: number }) {
-  const grade = score >= 85 ? 5 : score >= 65 ? 4 : score >= 41 ? 3 : 2
-  const color =
-    grade === 5 ? 'bg-blue-100 text-blue-800' :
-    grade === 4 ? 'bg-green-100 text-green-800' :
-    grade === 3 ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
+  const grade = getGrade(score)
   return (
-    <span className={`inline-block px-2 py-0.5 rounded text-sm font-bold ${color}`}>
+    <span className={`inline-block px-2 py-0.5 rounded text-sm font-bold ${getGradeColor(grade)}`}>
       {grade}
     </span>
   )

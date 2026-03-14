@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/context/ToastContext'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Badge } from '@/components/ui/Badge'
+import { getScoreVariant } from '@/utils/scoreUtils'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { MathText } from '@/components/ui/MathText'
@@ -225,7 +226,7 @@ export function TestResultsPage() {
                         <span className="text-sm text-gray-900">{getStudentName(result.studentId)}</span>
                         <span className="text-sm text-gray-500">{result.quarter}</span>
                         <span className="text-sm">
-                          <Badge variant={result.score >= 70 ? 'success' : result.score >= 50 ? 'warning' : 'danger'}>
+                          <Badge variant={getScoreVariant(result.score)}>
                             {result.correctCount} из {result.questionIds.length} &middot; {result.score}%
                           </Badge>
                         </span>
