@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
 import { createTest, getSubjects, getTestBanks } from '@/services/db'
@@ -15,11 +15,12 @@ const CLASS_LEVELS: ClassLevel[] = [7, 8, 9, 10, 11]
 export function TestCreatePage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { showSuccess, showError } = useToast()
   const { data: subjects, loading: loadingSubjects } = useFirestoreQuery(() => getSubjects())
   const { data: testBanks, loading: loadingBanks } = useFirestoreQuery(() => getTestBanks())
 
-  const [testBankId, setTestBankId] = useState('')
+  const [testBankId, setTestBankId] = useState(searchParams.get('bankId') ?? '')
   const [subjectId, setSubjectId] = useState('')
   const [classLevel, setClassLevel] = useState<ClassLevel>(10)
   const [language, setLanguage] = useState('ru')

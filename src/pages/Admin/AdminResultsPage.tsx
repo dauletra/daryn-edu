@@ -1,23 +1,59 @@
 import { useState, useMemo } from 'react'
 import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
-import { getClasses, getUsers, getTestBanks, getResultsByBank } from '@/services/db'
+import { getClasses, getUsers, getTestBanks, getResultsByBank, getTests, resetStudentTestAccess } from '@/services/db'
+import { useAuth } from '@/hooks/useAuth'
+import { useToast } from '@/context/ToastContext'
+import { Button } from '@/components/ui/Button'
+import { Modal } from '@/components/ui/Modal'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { exportClassResults } from './exportClassResults'
 import { getGrade, getScoreColor, getGradeColor } from '@/utils/scoreUtils'
 import type { TestResult, AppUser } from '@/types'
 
 export function AdminResultsPage() {
+  const { user } = useAuth()
+  const { showSuccess, showError } = useToast()
   const { data: testBanks, loading: loadingBanks } = useFirestoreQuery(() => getTestBanks())
   const { data: classes, loading: loadingClasses } = useFirestoreQuery(() => getClasses())
   const { data: students, loading: loadingStudents } = useFirestoreQuery(() => getUsers('student'))
+  const { data: tests } = useFirestoreQuery(() => getTests())
   const [selectedBankId, setSelectedBankId] = useState('')
   const [filterClassId, setFilterClassId] = useState('')
   const [filterSubjectId, setFilterSubjectId] = useState('')
+  const [confirmReset, setConfirmReset] = useState<{ studentId: string; studentName: string; testId: string } | null>(null)
+  const [resetting, setResetting] = useState(false)
 
-  const { data: bankResults, loading: loadingResults } = useFirestoreQuery(
+  const { data: bankResults, loading: loadingResults, refetch: refetchResults } = useFirestoreQuery(
     () => selectedBankId ? getResultsByBank(selectedBankId) : Promise.resolve([]),
     [selectedBankId]
   )
+
+  // Map testId → createdBy for ownership check
+  const testsCreatorMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const t of tests ?? []) map.set(t.id, t.createdBy)
+    return map
+  }, [tests])
+
+  const canReset = (result: TestResult) => {
+    if (user?.role === 'admin') return true
+    return testsCreatorMap.get(result.testId) === user?.uid
+  }
+
+  const handleReset = async () => {
+    if (!confirmReset) return
+    setResetting(true)
+    try {
+      await resetStudentTestAccess(confirmReset.studentId, confirmReset.testId)
+      showSuccess(`Доступ к тесту для ${confirmReset.studentName} сброшен`)
+      setConfirmReset(null)
+      refetchResults()
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Ошибка сброса')
+    } finally {
+      setResetting(false)
+    }
+  }
 
   const selectedBank = useMemo(
     () => testBanks?.find((b) => b.id === selectedBankId) ?? null,
@@ -155,6 +191,10 @@ export function AdminResultsPage() {
           subjectId={filterSubjectId}
           className={selectedClass?.name ?? filterClassId}
           classStudents={classStudents}
+          canReset={canReset}
+          onResetRequest={(studentId, studentName, testId) =>
+            setConfirmReset({ studentId, studentName, testId })
+          }
         />
       ) : (
         <ClassView
@@ -164,6 +204,16 @@ export function AdminResultsPage() {
           classStudents={classStudents}
         />
       )}
+
+      <Modal isOpen={!!confirmReset} onClose={() => setConfirmReset(null)} title="Сбросить результат?">
+        <p className="text-sm text-gray-600 mb-4">
+          Результат ученика <strong>{confirmReset?.studentName}</strong> будет удалён — ученик сможет пройти тест заново.
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setConfirmReset(null)}>Отмена</Button>
+          <Button variant="danger" isLoading={resetting} onClick={() => void handleReset()}>Сбросить</Button>
+        </div>
+      </Modal>
     </div>
   )
 }
@@ -312,9 +362,11 @@ interface SubjectViewProps {
   subjectId: string
   className: string
   classStudents: AppUser[]
+  canReset?: (result: TestResult) => boolean
+  onResetRequest?: (studentId: string, studentName: string, testId: string) => void
 }
 
-function SubjectView({ bankResults, classId, subjectId, className, classStudents }: SubjectViewProps) {
+function SubjectView({ bankResults, classId, subjectId, className, classStudents, canReset, onResetRequest }: SubjectViewProps) {
   const resultMap = useMemo(() => {
     const map = new Map<string, TestResult>()
     for (const r of bankResults) {
@@ -354,6 +406,9 @@ function SubjectView({ bankResults, classId, subjectId, className, classStudents
             </th>
             <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">%</th>
             <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Оценка</th>
+            {(canReset || onResetRequest) && (
+              <th className="text-center px-4 py-3 text-sm font-medium text-gray-500"></th>
+            )}
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
@@ -371,6 +426,18 @@ function SubjectView({ bankResults, classId, subjectId, className, classStudents
               <td className="px-4 py-3 text-center">
                 {result ? <GradeBadge score={result.score} /> : <span className="text-gray-300">—</span>}
               </td>
+              {(canReset || onResetRequest) && (
+                <td className="px-4 py-3 text-center">
+                  {result && canReset?.(result) && onResetRequest && (
+                    <button
+                      onClick={() => onResetRequest(student.uid, student.name, result.testId)}
+                      className="text-xs text-orange-600 hover:text-orange-800 cursor-pointer"
+                    >
+                      Сбросить
+                    </button>
+                  )}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -395,6 +462,7 @@ function SubjectView({ bankResults, classId, subjectId, className, classStudents
                 <td className="px-4 py-3 text-center font-bold text-sm text-gray-900">
                   {avgGrade}
                 </td>
+                {(canReset || onResetRequest) && <td />}
               </tr>
             </tfoot>
           )

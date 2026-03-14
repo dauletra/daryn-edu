@@ -30,11 +30,11 @@ export function AdminLayout() {
           <NavLink to="/admin/students" className={navLinkClass}>
             Ученики
           </NavLink>
+          <NavLink to="/admin/subjects" className={navLinkClass}>
+            Предметы
+          </NavLink>
           <NavLink to="/admin/test-banks" className={navLinkClass}>
             Банки тестов
-          </NavLink>
-          <NavLink to="/admin/tests" className={navLinkClass}>
-            Тесты
           </NavLink>
           <NavLink to="/admin/results" className={navLinkClass}>
             Результаты

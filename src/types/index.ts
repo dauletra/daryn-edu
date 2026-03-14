@@ -37,6 +37,7 @@ export interface Class {
   studentIds: string[]
   assignedTests: string[]
   createdBy?: string
+  activeBankId?: string
 }
 
 export interface TestBank {

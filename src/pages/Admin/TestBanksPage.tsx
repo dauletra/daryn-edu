@@ -11,6 +11,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
 const QUARTERS = [1, 2, 3, 4] as const
 const CURRENT_YEAR = new Date().getFullYear()
+const YEAR_OPTIONS = Array.from({ length: 8 }, (_, i) => CURRENT_YEAR - 2 + i)
 
 export function TestBanksPage() {
   const { data: banks, loading: loadingBanks, refetch } = useFirestoreQuery(() => getTestBanks())
@@ -121,7 +122,7 @@ export function TestBanksPage() {
                     </Link>
                     <div className="flex items-center gap-3 mt-2 text-sm text-gray-500">
                       <span>{bank.quarter} четверть</span>
-                      <span>{bank.academicYear} г.</span>
+                      <span>{bank.academicYear}–{bank.academicYear + 1} уч. год</span>
                     </div>
                     <div className="flex items-center gap-2 mt-2">
                       <Badge variant="info">Тестов: {testsCount}</Badge>
@@ -175,13 +176,18 @@ export function TestBanksPage() {
                 ))}
               </select>
             </div>
-            <Input
-              label="Учебный год"
-              type="number"
-              value={academicYear}
-              onChange={(e) => setAcademicYear(e.target.value)}
-              min="2020"
-            />
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">Учебный год</label>
+              <select
+                value={academicYear}
+                onChange={(e) => setAcademicYear(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {YEAR_OPTIONS.map((y) => (
+                  <option key={y} value={y}>{y}–{y + 1}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setShowCreate(false)}>Отмена</Button>
@@ -211,13 +217,18 @@ export function TestBanksPage() {
                 ))}
               </select>
             </div>
-            <Input
-              label="Учебный год"
-              type="number"
-              value={academicYear}
-              onChange={(e) => setAcademicYear(e.target.value)}
-              min="2020"
-            />
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">Учебный год</label>
+              <select
+                value={academicYear}
+                onChange={(e) => setAcademicYear(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {YEAR_OPTIONS.map((y) => (
+                  <option key={y} value={y}>{y}–{y + 1}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => { setEditingBank(null); resetForm() }}>Отмена</Button>

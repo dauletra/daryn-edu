@@ -4,7 +4,7 @@ import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
 import {
   getClass, getTests, getUsers, getTestBanks,
   assignTestToClass, removeTestFromClass,
-  removeStudentFromClass, createStudentsBulk, deleteClass,
+  removeStudentFromClass, createStudentsBulk, deleteClass, updateClass,
 } from '@/services/db'
 import { useToast } from '@/context/ToastContext'
 import { useAuth } from '@/hooks/useAuth'
@@ -40,6 +40,10 @@ export function ClassDetailPage({ backTo, backLabel }: { backTo: string; backLab
   const [createdStudents, setCreatedStudents] = useState<{ name: string; email: string; password: string }[]>([])
   const [bulkErrors, setBulkErrors] = useState<string[]>([])
 
+  // Active bank
+  const [changeBankModalOpen, setChangeBankModalOpen] = useState(false)
+  const [newBankId, setNewBankId] = useState('')
+
   // Remove student
   const [confirmRemove, setConfirmRemove] = useState<{ studentId: string; studentName: string } | null>(null)
   const [confirmDeleteClass, setConfirmDeleteClass] = useState(false)
@@ -51,9 +55,44 @@ export function ClassDetailPage({ backTo, backLabel }: { backTo: string; backLab
     (user?.role === 'moderator' && cls?.createdBy === user?.uid)
 
   // Tests in selected bank (published only, not already assigned)
+  // Moderators see only their own tests; admin sees all
   const bankTests = tests
-    ?.filter((t) => t.testBankId === selectedBankId && t.published && !alreadyAssigned.has(t.id))
+    ?.filter((t) => {
+      if (t.testBankId !== selectedBankId || !t.published || alreadyAssigned.has(t.id)) return false
+      if (user?.role === 'moderator') return t.createdBy === user.uid
+      return true
+    })
     ?? []
+
+  // Active bank helpers
+  const activeBank = testBanks?.find((b) => b.id === cls?.activeBankId) ?? null
+  const activeBankLabel = activeBank
+    ? `${activeBank.name} — ${activeBank.quarter} четв. ${activeBank.academicYear}-${activeBank.academicYear + 1}`
+    : 'Не выбран'
+
+  // Assigned tests filtered by active bank (for display)
+  const visibleAssignedTestIds = cls?.activeBankId
+    ? (cls.assignedTests ?? []).filter((testId) => {
+        const t = tests?.find((x) => x.id === testId)
+        return t?.testBankId === cls.activeBankId
+      })
+    : (cls?.assignedTests ?? [])
+
+  const handleChangeBank = async () => {
+    if (!cls || !newBankId) return
+    setSubmitting(true)
+    try {
+      await updateClass(cls.id, { activeBankId: newBankId })
+      showSuccess('Активный банк обновлён')
+      setChangeBankModalOpen(false)
+      setNewBankId('')
+      refetch()
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Ошибка')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   const getTestTitle = (testId: string) => {
     return tests?.find((t) => t.id === testId)?.title ?? testId
@@ -285,24 +324,41 @@ export function ClassDetailPage({ backTo, backLabel }: { backTo: string; backLab
         )}
       </div>
 
+      {/* Active Bank Section */}
+      <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="text-sm font-medium text-gray-700">Активный банк: </span>
+            <span className="text-sm text-gray-900">{activeBankLabel}</span>
+          </div>
+          <Button
+            variant="secondary"
+            className="text-xs"
+            onClick={() => { setNewBankId(cls.activeBankId ?? ''); setChangeBankModalOpen(true) }}
+          >
+            Сменить банк
+          </Button>
+        </div>
+      </div>
+
       {/* Assigned Tests Section */}
       <div className="bg-white rounded-xl shadow-sm p-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">
-            Назначенные тесты <Badge variant="success">{cls.assignedTests?.length ?? 0}</Badge>
+            Назначенные тесты <Badge variant="success">{visibleAssignedTestIds.length}</Badge>
           </h2>
           <Button
             variant="secondary"
             className="text-xs"
-            onClick={() => setAssignModalOpen(true)}
+            onClick={() => { setSelectedBankId(cls.activeBankId ?? ''); setAssignModalOpen(true) }}
           >
             Назначить тест
           </Button>
         </div>
 
-        {cls.assignedTests?.length > 0 ? (
+        {visibleAssignedTestIds.length > 0 ? (
           <div className="flex flex-col gap-2">
-            {cls.assignedTests.map((testId) => {
+            {visibleAssignedTestIds.map((testId) => {
               const testExists = tests?.some((t) => t.id === testId)
               return (
               <div key={testId} className="flex items-center justify-between text-sm bg-gray-50 px-4 py-3 rounded-lg">
@@ -320,9 +376,36 @@ export function ClassDetailPage({ backTo, backLabel }: { backTo: string; backLab
             })}
           </div>
         ) : (
-          <p className="text-sm text-gray-400">Нет назначенных тестов</p>
+          <p className="text-sm text-gray-400">
+            {cls.activeBankId ? 'Нет назначенных тестов в активном банке' : 'Нет назначенных тестов'}
+          </p>
         )}
       </div>
+
+      {/* Change Active Bank Modal */}
+      <Modal isOpen={changeBankModalOpen} onClose={() => setChangeBankModalOpen(false)} title="Сменить активный банк">
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-gray-600">
+            После смены банка ученики увидят только тесты из нового банка. Старые тесты сохранятся, но будут скрыты.
+          </p>
+          <select
+            value={newBankId}
+            onChange={(e) => setNewBankId(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Выберите банк тестов</option>
+            {testBanks?.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name} — {b.quarter} четв. {b.academicYear}-{b.academicYear + 1}
+              </option>
+            ))}
+          </select>
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setChangeBankModalOpen(false)}>Отмена</Button>
+            <Button isLoading={submitting} disabled={!newBankId} onClick={() => void handleChangeBank()}>Сохранить</Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Assign Test Modal — Bank selection + Checkboxes */}
       <Modal

@@ -1,16 +1,23 @@
 import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
-import { getTests, getUsers, getTestBanks } from '@/services/db'
+import { getTests, getUsers, getTestBanks, updateTest, deleteTest } from '@/services/db'
+import { useToast } from '@/context/ToastContext'
 import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Modal } from '@/components/ui/Modal'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import type { Test } from '@/types'
 
 export function AdminTestsPage() {
-  const { data: tests, loading: loadingTests } = useFirestoreQuery(() => getTests())
+  const { data: tests, loading: loadingTests, refetch } = useFirestoreQuery(() => getTests())
   const { data: moderators, loading: loadingModerators } = useFirestoreQuery(() => getUsers('moderator'))
   const { data: testBanks, loading: loadingBanks } = useFirestoreQuery(() => getTestBanks())
+  const { showSuccess, showError } = useToast()
 
   const [filterBankId, setFilterBankId] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; title: string } | null>(null)
 
   const filteredTests = useMemo(() => {
     if (!tests) return []
@@ -28,6 +35,34 @@ export function AdminTestsPage() {
   const getBankName = (bankId: string) => {
     const bank = testBanks?.find((b) => b.id === bankId)
     return bank?.name ?? '—'
+  }
+
+  const handlePublishToggle = async (test: Test) => {
+    setSubmitting(true)
+    try {
+      await updateTest(test.id, { published: !test.published })
+      showSuccess(test.published ? 'Тест снят с публикации' : 'Тест опубликован')
+      refetch()
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Ошибка')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!confirmDelete) return
+    setSubmitting(true)
+    try {
+      await deleteTest(confirmDelete.id)
+      showSuccess('Тест удалён')
+      setConfirmDelete(null)
+      refetch()
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Ошибка удаления')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -77,12 +112,28 @@ export function AdminTestsPage() {
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <Link
-                      to={`/admin/tests/${test.id}/view`}
-                      className="text-sm text-blue-600 hover:text-blue-800"
-                    >
-                      Просмотреть
-                    </Link>
+                    <div className="flex items-center gap-3">
+                      <Link
+                        to={`/admin/tests/${test.id}/view`}
+                        className="text-sm text-blue-600 hover:text-blue-800"
+                      >
+                        Просмотреть
+                      </Link>
+                      <button
+                        onClick={() => void handlePublishToggle(test)}
+                        disabled={submitting}
+                        className="text-sm text-indigo-600 hover:text-indigo-800 disabled:opacity-40 cursor-pointer"
+                      >
+                        {test.published ? 'Снять' : 'Опубликовать'}
+                      </button>
+                      <button
+                        onClick={() => setConfirmDelete({ id: test.id, title: test.title })}
+                        disabled={submitting}
+                        className="text-sm text-red-600 hover:text-red-800 disabled:opacity-40 cursor-pointer"
+                      >
+                        Удалить
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -92,6 +143,16 @@ export function AdminTestsPage() {
       ) : (
         <p className="text-gray-500">Тестов пока нет</p>
       )}
+
+      <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Удалить тест?">
+        <p className="text-sm text-gray-600 mb-4">
+          Тест <strong>{confirmDelete?.title}</strong> будет удалён вместе со всеми вопросами. Это действие нельзя отменить.
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Отмена</Button>
+          <Button variant="danger" isLoading={submitting} onClick={() => void handleDeleteConfirm()}>Удалить</Button>
+        </div>
+      </Modal>
     </div>
   )
 }

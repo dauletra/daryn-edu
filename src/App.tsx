@@ -14,6 +14,7 @@ import { StudentsPage } from '@/pages/shared/StudentsPage'
 import { AdminTestsPage } from '@/pages/Admin/AdminTestsPage'
 import { AdminResultsPage } from '@/pages/Admin/AdminResultsPage'
 import { AdminAnalyticsPage } from '@/pages/Admin/AdminAnalyticsPage'
+import { AdminSubjectsPage } from '@/pages/Admin/AdminSubjectsPage'
 import { TestBanksPage } from '@/pages/Admin/TestBanksPage'
 import { TestBankDetailPage } from '@/pages/Admin/TestBankDetailPage'
 import { ModeratorDashboard } from '@/pages/Moderator/ModeratorDashboard'
@@ -49,11 +50,11 @@ const router = createBrowserRouter([
       { path: 'classes', element: <ClassesListPage basePath="/admin/classes" /> },
       { path: 'classes/:id', element: <ClassDetailPage backTo="/admin/classes" backLabel="Классы" /> },
       { path: 'students', element: <StudentsPage /> },
-      { path: 'subjects', element: <SubjectsPage /> },
+      { path: 'subjects', element: <AdminSubjectsPage /> },
       { path: 'test-banks', element: <TestBanksPage /> },
       { path: 'test-banks/:id', element: <TestBankDetailPage /> },
       { path: 'tests', element: <AdminTestsPage /> },
-      { path: 'tests/:id/view', element: <TestViewPage backTo="/admin/tests" backLabel="Назад к списку тестов" /> },
+      { path: 'tests/:id/view', element: <TestViewPage backTo="/admin/test-banks" backLabel="Банки тестов" /> },
       { path: 'results', element: <AdminResultsPage /> },
       { path: 'analytics', element: <AdminAnalyticsPage /> },
     ],
@@ -73,6 +74,8 @@ const router = createBrowserRouter([
       { path: 'tests/:id/edit', element: <TestEditPage /> },
       { path: 'tests/:id/view', element: <TestViewPage backTo="/moderator/tests" backLabel="Назад к тестам" /> },
       { path: 'tests/:id/results', element: <TestResultsPage /> },
+      { path: 'results', element: <AdminResultsPage /> },
+      { path: 'analytics', element: <AdminAnalyticsPage /> },
       { path: 'students', element: <StudentsPage /> },
       { path: 'classes', element: <ClassesListPage basePath="/moderator/classes" /> },
       { path: 'classes/:id', element: <ClassDetailPage backTo="/moderator/classes" backLabel="Классы" /> },

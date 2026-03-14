@@ -25,7 +25,13 @@ export function ModeratorLayout() {
             Предметы
           </NavLink>
           <NavLink to="/moderator/tests" className={navLinkClass}>
-            Мои тесты
+            Тесты
+          </NavLink>
+          <NavLink to="/moderator/results" className={navLinkClass}>
+            Результаты
+          </NavLink>
+          <NavLink to="/moderator/analytics" className={navLinkClass}>
+            Аналитика
           </NavLink>
           <NavLink to="/moderator/students" className={navLinkClass}>
             Ученики

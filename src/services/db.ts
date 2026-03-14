@@ -238,7 +238,7 @@ export async function createClass(name: string, createdBy: string): Promise<stri
   return docRef.id
 }
 
-export async function updateClass(id: string, data: Partial<Pick<Class, 'name'>>): Promise<void> {
+export async function updateClass(id: string, data: Partial<Pick<Class, 'name' | 'activeBankId'>>): Promise<void> {
   await updateDoc(doc(db, 'classes', id), data)
 }
 
@@ -597,6 +597,9 @@ export async function getAssignedTests(classId: string): Promise<Test[]> {
         results.push(test)
       }
     }
+  }
+  if (classData.activeBankId) {
+    return results.filter((t) => t.testBankId === classData.activeBankId)
   }
   return results
 }

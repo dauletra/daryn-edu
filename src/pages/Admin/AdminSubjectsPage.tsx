@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
-import { getSubjects, createSubject, deleteSubject } from '@/services/db'
+import { getSubjects, createSubject, deleteSubject, getUsers } from '@/services/db'
 import { useToast } from '@/context/ToastContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -9,19 +9,25 @@ import { Modal } from '@/components/ui/Modal'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { validateField, required } from '@/utils/validation'
 
-export function SubjectsPage() {
+export function AdminSubjectsPage() {
   const { user } = useAuth()
-  const { data: subjects, loading, refetch } = useFirestoreQuery(() => getSubjects())
+  const { data: subjects, loading: loadingSubjects, refetch } = useFirestoreQuery(() => getSubjects())
+  const { data: moderators, loading: loadingModerators } = useFirestoreQuery(() => getUsers('moderator'))
   const { showSuccess, showError } = useToast()
   const [modalOpen, setModalOpen] = useState(false)
   const [name, setName] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null)
 
   const resetForm = () => {
     setName('')
     setErrors({})
+  }
+
+  const getCreatorName = (uid: string) => {
+    const mod = moderators?.find((m) => m.uid === uid)
+    return mod?.name ?? '—'
   }
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -45,9 +51,10 @@ export function SubjectsPage() {
     }
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async () => {
+    if (!confirmDelete) return
     try {
-      await deleteSubject(id)
+      await deleteSubject(confirmDelete.id)
       showSuccess('Предмет удалён')
       setConfirmDelete(null)
       refetch()
@@ -56,7 +63,7 @@ export function SubjectsPage() {
     }
   }
 
-  if (loading) return <LoadingSpinner />
+  if (loadingSubjects || loadingModerators) return <LoadingSpinner />
 
   return (
     <div>
@@ -71,6 +78,7 @@ export function SubjectsPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Название</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Создал</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Действия</th>
               </tr>
             </thead>
@@ -78,17 +86,14 @@ export function SubjectsPage() {
               {subjects.map((subject) => (
                 <tr key={subject.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm text-gray-900">{subject.name}</td>
+                  <td className="px-4 py-3 text-sm text-gray-500">{getCreatorName(subject.createdBy)}</td>
                   <td className="px-4 py-3">
-                    {subject.createdBy === user?.uid ? (
-                      <button
-                        onClick={() => setConfirmDelete(subject.id)}
-                        className="text-sm text-red-600 hover:text-red-800 cursor-pointer"
-                      >
-                        Удалить
-                      </button>
-                    ) : (
-                      <span className="text-sm text-gray-300">—</span>
-                    )}
+                    <button
+                      onClick={() => setConfirmDelete({ id: subject.id, name: subject.name })}
+                      className="text-sm text-red-600 hover:text-red-800 cursor-pointer"
+                    >
+                      Удалить
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -110,10 +115,12 @@ export function SubjectsPage() {
       </Modal>
 
       <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Удалить предмет?">
-        <p className="text-sm text-gray-600 mb-4">Это действие нельзя отменить.</p>
+        <p className="text-sm text-gray-600 mb-4">
+          Предмет <strong>{confirmDelete?.name}</strong> будет удалён. Это действие нельзя отменить.
+        </p>
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Отмена</Button>
-          <Button variant="danger" onClick={() => confirmDelete && handleDelete(confirmDelete)}>Удалить</Button>
+          <Button variant="danger" onClick={() => void handleDelete()}>Удалить</Button>
         </div>
       </Modal>
     </div>

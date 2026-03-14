@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
-import { getClasses, createClass } from '@/services/db'
+import { getClasses, createClass, getTestBanks } from '@/services/db'
 import { useToast } from '@/context/ToastContext'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
@@ -14,7 +14,15 @@ import { validateField, required } from '@/utils/validation'
 export function ClassesListPage({ basePath }: { basePath: string }) {
   const { user } = useAuth()
   const { data: classes, loading, refetch } = useFirestoreQuery(() => getClasses())
+  const { data: testBanks } = useFirestoreQuery(() => getTestBanks())
   const { showSuccess, showError } = useToast()
+
+  const getBankLabel = (bankId?: string) => {
+    if (!bankId) return null
+    const bank = testBanks?.find((b) => b.id === bankId)
+    if (!bank) return null
+    return `${bank.quarter} четв. ${bank.academicYear}-${bank.academicYear + 1}`
+  }
 
   const [modalOpen, setModalOpen] = useState(false)
   const [className, setClassName] = useState('')
@@ -68,7 +76,9 @@ export function ClassesListPage({ basePath }: { basePath: string }) {
                 <div className="flex items-center gap-3">
                   <span className="font-medium text-gray-900">{cls.name}</span>
                   <Badge variant="info">{cls.studentIds?.length ?? 0} учеников</Badge>
-                  <Badge variant="success">{cls.assignedTests?.length ?? 0} тестов</Badge>
+                  {getBankLabel(cls.activeBankId) && (
+                    <Badge variant="warning">{getBankLabel(cls.activeBankId)}</Badge>
+                  )}
                 </div>
                 <span className="text-sm text-blue-600">Открыть</span>
               </div>
