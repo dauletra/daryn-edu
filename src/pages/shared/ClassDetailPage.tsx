@@ -8,6 +8,8 @@ import {
 } from '@/services/db'
 import { useToast } from '@/context/ToastContext'
 import { useAuth } from '@/hooks/useAuth'
+import { useBank } from '@/context/BankContext'
+import { formatTestTitle } from '@/utils/testTitle'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
@@ -25,13 +27,13 @@ export function ClassDetailPage({ backTo, backLabel }: { backTo: string; backLab
   const { data: testBanks } = useFirestoreQuery(() => getTestBanks())
   const { data: allStudents, refetch: refetchStudents } = useFirestoreQuery(() => getUsers('student'))
   const { showSuccess, showError } = useToast()
+  const { selectedBankId, selectedBank: contextBank } = useBank()
 
   const [assignModalOpen, setAssignModalOpen] = useState(false)
   const [addStudentsModalOpen, setAddStudentsModalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
-  // Assign test form — bank selection + checkboxes
-  const [selectedBankId, setSelectedBankId] = useState('')
+  // Assign test form — checkboxes only (bank comes from context)
   const [selectedTestIds, setSelectedTestIds] = useState<Set<string>>(new Set())
 
   // Bulk add students
@@ -59,7 +61,6 @@ export function ClassDetailPage({ backTo, backLabel }: { backTo: string; backLab
   const bankTests = tests
     ?.filter((t) => {
       if (t.testBankId !== selectedBankId || !t.published || alreadyAssigned.has(t.id)) return false
-      if (user?.role === 'moderator') return t.createdBy === user.uid
       return true
     })
     ?? []
@@ -95,7 +96,8 @@ export function ClassDetailPage({ backTo, backLabel }: { backTo: string; backLab
   }
 
   const getTestTitle = (testId: string) => {
-    return tests?.find((t) => t.id === testId)?.title ?? testId
+    const t = tests?.find((x) => x.id === testId)
+    return t ? formatTestTitle(t) : testId
   }
 
   const toggleTestSelection = (testId: string) => {
@@ -120,7 +122,6 @@ export function ClassDetailPage({ backTo, backLabel }: { backTo: string; backLab
       }
       showSuccess(`Назначено тестов: ${selectedTestIds.size}`)
       setAssignModalOpen(false)
-      setSelectedBankId('')
       setSelectedTestIds(new Set())
       refetch()
     } catch (err) {
@@ -328,16 +329,39 @@ export function ClassDetailPage({ backTo, backLabel }: { backTo: string; backLab
       <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-sm font-medium text-gray-700">Активный банк: </span>
+            <span className="text-sm font-medium text-gray-700">Активный банк для учеников: </span>
             <span className="text-sm text-gray-900">{activeBankLabel}</span>
           </div>
-          <Button
-            variant="secondary"
-            className="text-xs"
-            onClick={() => { setNewBankId(cls.activeBankId ?? ''); setChangeBankModalOpen(true) }}
-          >
-            Сменить банк
-          </Button>
+          <div className="flex items-center gap-2">
+            {selectedBankId && selectedBankId !== cls.activeBankId && contextBank && (
+              <Button
+                variant="secondary"
+                className="text-xs"
+                isLoading={submitting}
+                onClick={() => void (async () => {
+                  setSubmitting(true)
+                  try {
+                    await updateClass(cls.id, { activeBankId: selectedBankId })
+                    showSuccess(`Активный банк: ${contextBank.name}`)
+                    refetch()
+                  } catch (err) {
+                    showError(err instanceof Error ? err.message : 'Ошибка')
+                  } finally {
+                    setSubmitting(false)
+                  }
+                })()}
+              >
+                Применить текущий
+              </Button>
+            )}
+            <Button
+              variant="secondary"
+              className="text-xs"
+              onClick={() => { setNewBankId(cls.activeBankId ?? ''); setChangeBankModalOpen(true) }}
+            >
+              Сменить банк
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -350,7 +374,7 @@ export function ClassDetailPage({ backTo, backLabel }: { backTo: string; backLab
           <Button
             variant="secondary"
             className="text-xs"
-            onClick={() => { setSelectedBankId(cls.activeBankId ?? ''); setAssignModalOpen(true) }}
+            onClick={() => setAssignModalOpen(true)}
           >
             Назначить тест
           </Button>
@@ -407,62 +431,53 @@ export function ClassDetailPage({ backTo, backLabel }: { backTo: string; backLab
         </div>
       </Modal>
 
-      {/* Assign Test Modal — Bank selection + Checkboxes */}
+      {/* Assign Test Modal — Checkboxes from current bank */}
       <Modal
         isOpen={assignModalOpen}
-        onClose={() => { setAssignModalOpen(false); setSelectedBankId(''); setSelectedTestIds(new Set()) }}
+        onClose={() => { setAssignModalOpen(false); setSelectedTestIds(new Set()) }}
         title={`Назначить тесты — ${cls.name}`}
       >
         <form onSubmit={handleAssignTests} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Банк тестов</label>
-            <select
-              value={selectedBankId}
-              onChange={(e) => { setSelectedBankId(e.target.value); setSelectedTestIds(new Set()) }}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Выберите банк тестов</option>
-              {testBanks?.map((bank) => (
-                <option key={bank.id} value={bank.id}>
-                  {bank.name} — {bank.quarter} четв. {bank.academicYear}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {selectedBankId && (
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">Тесты</label>
-              {bankTests.length > 0 ? (
-                <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
-                  {bankTests.map((t) => (
-                    <label
-                      key={t.id}
-                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedTestIds.has(t.id)}
-                        onChange={() => toggleTestSelection(t.id)}
-                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-900 truncate">{t.title}</p>
-                        <p className="text-xs text-gray-500">{t.subject} &middot; {t.classLevel} кл. &middot; {t.questionCount} вопросов</p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-400 py-2">
-                  Нет доступных опубликованных тестов в этом банке (или все уже назначены)
-                </p>
-              )}
-            </div>
+          {contextBank && (
+            <p className="text-sm text-gray-500">
+              Банк тестов: <span className="font-medium text-gray-700">{contextBank.name}</span>
+              {' '}· {contextBank.quarter} четв. · {contextBank.academicYear}–{contextBank.academicYear + 1}
+            </p>
           )}
 
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Тесты</label>
+            {!selectedBankId ? (
+              <p className="text-sm text-gray-400 py-2">Выберите банк тестов вверху страницы</p>
+            ) : bankTests.length > 0 ? (
+              <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+                {bankTests.map((t) => (
+                  <label
+                    key={t.id}
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedTestIds.has(t.id)}
+                      onChange={() => toggleTestSelection(t.id)}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-900 truncate">{formatTestTitle(t)}</p>
+                      <p className="text-xs text-gray-500">{t.questionCount} вопросов · {t.timeLimit} мин</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 py-2">
+                Нет доступных опубликованных тестов в этом банке (или все уже назначены)
+              </p>
+            )}
+          </div>
+
           <div className="flex justify-end gap-2 mt-2">
-            <Button variant="secondary" type="button" onClick={() => { setAssignModalOpen(false); setSelectedBankId(''); setSelectedTestIds(new Set()) }}>
+            <Button variant="secondary" type="button" onClick={() => { setAssignModalOpen(false); setSelectedTestIds(new Set()) }}>
               Отмена
             </Button>
             <Button type="submit" isLoading={submitting} disabled={selectedTestIds.size === 0}>

@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
+import { formatTestTitle } from '@/utils/testTitle'
 import { useAuth } from '@/hooks/useAuth'
 import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
-import { getTestsByBank, updateTest, deleteTest, getQuestionsCount, getClasses, getTestBanks, getUsers } from '@/services/db'
+import { getTestsByBank, updateTest, deleteTest, getQuestionsCount, getClasses, getUsers } from '@/services/db'
 import { useToast } from '@/context/ToastContext'
+import { useBank } from '@/context/BankContext'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -12,18 +14,15 @@ import { useState, useMemo } from 'react'
 export function TestsPage() {
   const { user } = useAuth()
   const { showSuccess, showError } = useToast()
-  const [selectedBankId, setSelectedBankId] = useState('')
+  const { selectedBankId, selectedBank, banks, loading: loadingBanks } = useBank()
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
-  const { data: testBanks, loading: loadingBanks } = useFirestoreQuery(() => getTestBanks())
   const { data: tests, loading: loadingTests, refetch } = useFirestoreQuery(
     () => selectedBankId ? getTestsByBank(selectedBankId) : Promise.resolve([]),
     [selectedBankId]
   )
   const { data: classes } = useFirestoreQuery(() => getClasses())
   const { data: moderators } = useFirestoreQuery(() => getUsers('moderator'))
-
-  const selectedBank = testBanks?.find((b) => b.id === selectedBankId) ?? null
 
   const myTests = useMemo(() => tests?.filter((t) => t.createdBy === user?.uid) ?? [], [tests, user?.uid])
   const colleagueTests = useMemo(() => tests?.filter((t) => t.createdBy !== user?.uid) ?? [], [tests, user?.uid])
@@ -63,6 +62,15 @@ export function TestsPage() {
 
   if (loadingBanks) return <LoadingSpinner />
 
+  if (banks.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500">Банки тестов ещё не созданы.</p>
+        <p className="text-sm text-gray-400 mt-1">Обратитесь к администратору.</p>
+      </div>
+    )
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -73,23 +81,6 @@ export function TestsPage() {
           </Link>
         )}
       </div>
-
-      <div className="mb-6">
-        <select
-          value={selectedBankId}
-          onChange={(e) => setSelectedBankId(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-72"
-        >
-          <option value="">Выберите банк тестов...</option>
-          {testBanks?.map((b) => (
-            <option key={b.id} value={b.id}>{b.name}</option>
-          ))}
-        </select>
-      </div>
-
-      {!selectedBankId && (
-        <p className="text-gray-500 text-center py-12">Выберите банк тестов для просмотра</p>
-      )}
 
       {selectedBankId && (
         <>
@@ -133,8 +124,7 @@ export function TestsPage() {
                       <div key={test.id} className="bg-white rounded-xl shadow-sm p-4">
                         <div className="flex items-start justify-between">
                           <div>
-                            <h3 className="font-medium text-gray-900">{test.title}</h3>
-                            <p className="text-sm text-gray-500 mt-1">{test.subject}</p>
+                            <h3 className="font-medium text-gray-900">{formatTestTitle(test)}</h3>
                             <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
                               <span>Вопросов для ученика: {test.questionCount}</span>
                               <span>Время: {test.timeLimit} мин</span>
@@ -205,7 +195,7 @@ export function TestsPage() {
                       <tbody className="divide-y divide-gray-100">
                         {colleagueTests.map((test) => (
                           <tr key={test.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 text-sm text-gray-900">{test.title}</td>
+                            <td className="px-4 py-3 text-sm text-gray-900">{formatTestTitle(test)}</td>
                             <td className="px-4 py-3 text-sm text-gray-500">{test.subject}</td>
                             <td className="px-4 py-3 text-sm text-gray-500">{getModeratorName(test.createdBy)}</td>
                             <td className="px-4 py-3">

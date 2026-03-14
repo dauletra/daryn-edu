@@ -21,7 +21,7 @@ export function ClassesListPage({ basePath }: { basePath: string }) {
     if (!bankId) return null
     const bank = testBanks?.find((b) => b.id === bankId)
     if (!bank) return null
-    return `${bank.quarter} четв. ${bank.academicYear}-${bank.academicYear + 1}`
+    return `${bank.name} · ${bank.quarter} четв. ${bank.academicYear}–${bank.academicYear + 1}`
   }
 
   const [modalOpen, setModalOpen] = useState(false)

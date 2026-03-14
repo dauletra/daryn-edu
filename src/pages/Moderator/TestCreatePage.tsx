@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
-import { createTest, getSubjects, getTestBanks } from '@/services/db'
+import { createTest, getSubjects } from '@/services/db'
 import { useToast } from '@/context/ToastContext'
+import { useBank } from '@/context/BankContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -15,12 +16,11 @@ const CLASS_LEVELS: ClassLevel[] = [7, 8, 9, 10, 11]
 export function TestCreatePage() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
   const { showSuccess, showError } = useToast()
+  const { selectedBankId, selectedBank } = useBank()
   const { data: subjects, loading: loadingSubjects } = useFirestoreQuery(() => getSubjects())
-  const { data: testBanks, loading: loadingBanks } = useFirestoreQuery(() => getTestBanks())
 
-  const [testBankId, setTestBankId] = useState(searchParams.get('bankId') ?? '')
+  const testBankId = selectedBankId
   const [subjectId, setSubjectId] = useState('')
   const [classLevel, setClassLevel] = useState<ClassLevel>(10)
   const [language, setLanguage] = useState('ru')
@@ -33,7 +33,6 @@ export function TestCreatePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const newErrors: Record<string, string> = {}
-    if (!testBankId) newErrors.testBank = 'Выберите банк тестов'
     if (!subjectId) newErrors.subject = 'Выберите предмет'
     if (!language.trim()) newErrors.language = 'Укажите язык'
     if (!variantNumber || Number(variantNumber) < 1) newErrors.variantNumber = 'Укажите номер варианта'
@@ -70,7 +69,7 @@ export function TestCreatePage() {
     }
   }
 
-  if (loadingSubjects || loadingBanks) return <LoadingSpinner />
+  if (loadingSubjects) return <LoadingSpinner />
 
   return (
     <div className="max-w-lg">
@@ -78,17 +77,12 @@ export function TestCreatePage() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 bg-white rounded-xl shadow-sm p-6">
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">Банк тестов</label>
-          <select
-            value={testBankId}
-            onChange={(e) => setTestBankId(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Выберите банк тестов</option>
-            {testBanks?.map((b) => (
-              <option key={b.id} value={b.id}>{b.name}</option>
-            ))}
-          </select>
-          {errors.testBank && <p className="text-sm text-red-600">{errors.testBank}</p>}
+          <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-700">
+            {selectedBank
+              ? `${selectedBank.name} · ${selectedBank.quarter} четв. · ${selectedBank.academicYear}–${selectedBank.academicYear + 1}`
+              : <span className="text-gray-400">Банк не выбран</span>
+            }
+          </div>
         </div>
 
         <div className="flex flex-col gap-1">

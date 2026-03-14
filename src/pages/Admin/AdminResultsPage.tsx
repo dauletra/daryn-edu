@@ -1,27 +1,32 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
-import { getClasses, getUsers, getTestBanks, getResultsByBank, getTests, resetStudentTestAccess } from '@/services/db'
+import { getClasses, getUsers, getResultsByBank, getTests, resetStudentTestAccess } from '@/services/db'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/context/ToastContext'
+import { useBank } from '@/context/BankContext'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import { exportClassResults } from './exportClassResults'
 import { getGrade, getScoreColor, getGradeColor } from '@/utils/scoreUtils'
 import type { TestResult, AppUser } from '@/types'
 
 export function AdminResultsPage() {
   const { user } = useAuth()
   const { showSuccess, showError } = useToast()
-  const { data: testBanks, loading: loadingBanks } = useFirestoreQuery(() => getTestBanks())
+  const { selectedBankId, selectedBank, loading: loadingBanks } = useBank()
   const { data: classes, loading: loadingClasses } = useFirestoreQuery(() => getClasses())
   const { data: students, loading: loadingStudents } = useFirestoreQuery(() => getUsers('student'))
   const { data: tests } = useFirestoreQuery(() => getTests())
-  const [selectedBankId, setSelectedBankId] = useState('')
   const [filterClassId, setFilterClassId] = useState('')
   const [filterSubjectId, setFilterSubjectId] = useState('')
   const [confirmReset, setConfirmReset] = useState<{ studentId: string; studentName: string; testId: string } | null>(null)
   const [resetting, setResetting] = useState(false)
+
+  // Reset class/subject filters when bank changes
+  useEffect(() => {
+    setFilterClassId('')
+    setFilterSubjectId('')
+  }, [selectedBankId])
 
   const { data: bankResults, loading: loadingResults, refetch: refetchResults } = useFirestoreQuery(
     () => selectedBankId ? getResultsByBank(selectedBankId) : Promise.resolve([]),
@@ -55,21 +60,10 @@ export function AdminResultsPage() {
     }
   }
 
-  const selectedBank = useMemo(
-    () => testBanks?.find((b) => b.id === selectedBankId) ?? null,
-    [testBanks, selectedBankId]
-  )
-
   const selectedClass = useMemo(
     () => classes?.find((c) => c.id === filterClassId) ?? null,
     [classes, filterClassId]
   )
-
-  const handleBankChange = (bankId: string) => {
-    setSelectedBankId(bankId)
-    setFilterClassId('')
-    setFilterSubjectId('')
-  }
 
   const handleClassChange = (classId: string) => {
     setFilterClassId(classId)
@@ -103,28 +97,6 @@ export function AdminResultsPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-4 mb-6">
-        {/* Bank selector */}
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-600">Банк тестов:</label>
-          <select
-            value={selectedBankId}
-            onChange={(e) => handleBankChange(e.target.value)}
-            className="px-2 py-1 border border-gray-300 rounded-lg text-sm"
-          >
-            <option value="">Выберите банк</option>
-            {testBanks?.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name} ({b.academicYear}, {b.quarter} четв.)
-              </option>
-            ))}
-          </select>
-          {selectedBank && (
-            <span className="text-sm text-gray-400">
-              {selectedBank.academicYear}–{selectedBank.academicYear + 1}, четверть {selectedBank.quarter}
-            </span>
-          )}
-        </div>
-
         {/* Class selector */}
         {selectedBankId && (
           <div className="flex items-center gap-2">
@@ -162,14 +134,17 @@ export function AdminResultsPage() {
         {/* Export button */}
         {filterClassId && selectedBank && !loadingResults && activeSubjects.length > 0 && (
           <button
-            onClick={() => void exportClassResults({
-              bank: selectedBank,
-              className: selectedClass?.name ?? filterClassId,
-              classStudents,
-              bankResults: bankResults ?? [],
-              classId: filterClassId,
-              activeSubjects,
-            })}
+            onClick={() => void (async () => {
+              const { exportClassResults } = await import('./exportClassResults')
+              await exportClassResults({
+                bank: selectedBank,
+                className: selectedClass?.name ?? filterClassId,
+                classStudents,
+                bankResults: bankResults ?? [],
+                classId: filterClassId,
+                activeSubjects,
+              })
+            })()}
             className="ml-auto px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
           >
             Экспорт в Excel
@@ -179,7 +154,7 @@ export function AdminResultsPage() {
 
       {/* Content area */}
       {!selectedBankId ? (
-        <p className="text-gray-500 text-center py-12">Выберите банк тестов для просмотра результатов</p>
+        <p className="text-gray-500 text-center py-12">Выберите банк тестов вверху страницы</p>
       ) : loadingResults ? (
         <LoadingSpinner />
       ) : !filterClassId ? (

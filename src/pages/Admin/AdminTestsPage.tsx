@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
 import { getTests, getUsers, getTestBanks, updateTest, deleteTest } from '@/services/db'
 import { useToast } from '@/context/ToastContext'
+import { formatTestTitle } from '@/utils/testTitle'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
@@ -101,7 +102,7 @@ export function AdminTestsPage() {
             <tbody className="divide-y divide-gray-100">
               {filteredTests.map((test) => (
                 <tr key={test.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm text-gray-900">{test.title}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900">{formatTestTitle(test)}</td>
                   <td className="px-4 py-3 text-sm text-gray-500">{test.testBankId ? getBankName(test.testBankId) : '—'}</td>
                   <td className="px-4 py-3 text-sm text-gray-500">{test.subject}</td>
                   <td className="px-4 py-3 text-sm text-gray-500">{getCreatorName(test.createdBy)}</td>
@@ -127,7 +128,7 @@ export function AdminTestsPage() {
                         {test.published ? 'Снять' : 'Опубликовать'}
                       </button>
                       <button
-                        onClick={() => setConfirmDelete({ id: test.id, title: test.title })}
+                        onClick={() => setConfirmDelete({ id: test.id, title: formatTestTitle(test) })}
                         disabled={submitting}
                         className="text-sm text-red-600 hover:text-red-800 disabled:opacity-40 cursor-pointer"
                       >

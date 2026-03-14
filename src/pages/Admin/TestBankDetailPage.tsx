@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
 import { getTestBank, getTestsByBank, getUsers, updateTest, deleteTest } from '@/services/db'
 import { useToast } from '@/context/ToastContext'
+import { formatTestTitle } from '@/utils/testTitle'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
@@ -119,7 +120,7 @@ export function TestBankDetailPage() {
             <tbody className="divide-y divide-gray-100">
               {tests.map((test) => (
                 <tr key={test.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm text-gray-900">{test.title}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900">{formatTestTitle(test)}</td>
                   <td className="px-4 py-3 text-sm text-gray-500">{test.subject}</td>
                   <td className="px-4 py-3 text-sm text-gray-500">{getCreatorName(test.createdBy)}</td>
                   <td className="px-4 py-3 text-sm text-gray-500">{test.questionCount}</td>
@@ -144,7 +145,7 @@ export function TestBankDetailPage() {
                         {test.published ? 'Снять' : 'Опубликовать'}
                       </button>
                       <button
-                        onClick={() => setConfirmDelete({ id: test.id, title: test.title })}
+                        onClick={() => setConfirmDelete({ id: test.id, title: formatTestTitle(test) })}
                         disabled={submitting}
                         className="text-sm text-red-600 hover:text-red-800 disabled:opacity-40 cursor-pointer"
                       >

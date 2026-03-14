@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
-import { getClasses, getUsers, getTestBanks, getSubjects, getResultsByBank } from '@/services/db'
+import { getClasses, getUsers, getSubjects, getResultsByBank } from '@/services/db'
+import { useBank } from '@/context/BankContext'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import type { ClassLevel, TestResult } from '@/types'
 import { computeOverallStats, groupByClass, groupBySubject } from './analytics/analyticsUtils'
@@ -11,13 +12,18 @@ type Tab = 'classes' | 'subjects'
 export function AdminAnalyticsPage() {
   const { data: classes, loading: loadingClasses } = useFirestoreQuery(() => getClasses())
   const { data: students, loading: loadingStudents } = useFirestoreQuery(() => getUsers('student'))
-  const { data: testBanks, loading: loadingBanks } = useFirestoreQuery(() => getTestBanks())
   const { data: subjects, loading: loadingSubjects } = useFirestoreQuery(() => getSubjects())
+  const { selectedBankId, loading: loadingBanks } = useBank()
 
-  const [selectedBankId, setSelectedBankId] = useState('')
   const [filterClassLevel, setFilterClassLevel] = useState<ClassLevel | ''>('')
   const [filterSubjectId, setFilterSubjectId] = useState('')
   const [activeTab, setActiveTab] = useState<Tab>('classes')
+
+  // Reset filters when bank changes
+  useEffect(() => {
+    setFilterClassLevel('')
+    setFilterSubjectId('')
+  }, [selectedBankId])
 
   const { data: bankResults, loading: loadingResults } = useFirestoreQuery(
     () => selectedBankId ? getResultsByBank(selectedBankId) : Promise.resolve([]),
@@ -73,61 +79,43 @@ export function AdminAnalyticsPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Аналитика</h1>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-4 mb-6">
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-600">Банк тестов:</label>
-          <select
-            value={selectedBankId}
-            onChange={(e) => setSelectedBankId(e.target.value)}
-            className="px-2 py-1 border border-gray-300 rounded-lg text-sm"
-          >
-            <option value="">Выберите банк</option>
-            {testBanks?.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name} ({b.academicYear}, {b.quarter} четв.)
-              </option>
-            ))}
-          </select>
+      {selectedBankId && (
+        <div className="flex flex-wrap items-center gap-4 mb-6">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600">Параллель:</label>
+            <select
+              value={filterClassLevel}
+              onChange={(e) => {
+                const level = e.target.value ? (Number(e.target.value) as ClassLevel) : ''
+                setFilterClassLevel(level)
+              }}
+              className="px-2 py-1 border border-gray-300 rounded-lg text-sm"
+            >
+              <option value="">Все</option>
+              {CLASS_LEVELS.map((l) => (
+                <option key={l} value={l}>{l} класс</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600">Предмет:</label>
+            <select
+              value={filterSubjectId}
+              onChange={(e) => setFilterSubjectId(e.target.value)}
+              className="px-2 py-1 border border-gray-300 rounded-lg text-sm"
+            >
+              <option value="">Все</option>
+              {subjects?.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
-
-        {selectedBankId && (
-          <>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600">Параллель:</label>
-              <select
-                value={filterClassLevel}
-                onChange={(e) => {
-                  const level = e.target.value ? (Number(e.target.value) as ClassLevel) : ''
-                  setFilterClassLevel(level)
-                }}
-                className="px-2 py-1 border border-gray-300 rounded-lg text-sm"
-              >
-                <option value="">Все</option>
-                {CLASS_LEVELS.map((l) => (
-                  <option key={l} value={l}>{l} класс</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600">Предмет:</label>
-              <select
-                value={filterSubjectId}
-                onChange={(e) => setFilterSubjectId(e.target.value)}
-                className="px-2 py-1 border border-gray-300 rounded-lg text-sm"
-              >
-                <option value="">Все</option>
-                {subjects?.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </div>
-          </>
-        )}
-      </div>
+      )}
 
       {!selectedBankId ? (
-        <p className="text-gray-500 text-center py-12">Выберите банк тестов для просмотра аналитики</p>
+        <p className="text-gray-500 text-center py-12">Выберите банк тестов вверху страницы</p>
       ) : loadingResults ? (
         <LoadingSpinner />
       ) : (

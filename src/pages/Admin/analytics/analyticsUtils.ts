@@ -75,7 +75,7 @@ export function groupByClass(
     .sort((a, b) => a.className.localeCompare(b.className))
 }
 
-export function groupBySubject(results: TestResult[], students: AppUser[]): SubjectRow[] {
+export function groupBySubject(results: TestResult[], _students: AppUser[]): SubjectRow[] {
   const bySubject = new Map<string, TestResult[]>()
 
   for (const r of results) {

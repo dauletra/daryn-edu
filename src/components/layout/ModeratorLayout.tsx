@@ -1,5 +1,6 @@
 import { Outlet, NavLink } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { BankHeader } from '@/components/layout/BankHeader'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `block px-3 py-2 rounded-lg transition-colors ${
@@ -17,6 +18,7 @@ export function ModeratorLayout() {
           <p className="text-sm text-gray-500">{user?.name}</p>
           <p className="text-xs text-gray-400">Модератор</p>
         </div>
+
         <nav className="flex-1 p-4 flex flex-col gap-1">
           <NavLink to="/moderator" end className={navLinkClass}>
             Главная
@@ -49,8 +51,11 @@ export function ModeratorLayout() {
           </button>
         </div>
       </aside>
-      <main className="flex-1 overflow-auto p-6">
-        <Outlet />
+      <main className="flex-1 overflow-auto flex flex-col">
+        <BankHeader />
+        <div className="flex-1 p-6">
+          <Outlet />
+        </div>
       </main>
     </div>
   )
