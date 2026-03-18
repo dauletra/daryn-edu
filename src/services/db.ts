@@ -15,6 +15,7 @@ import {
   arrayUnion,
   arrayRemove,
   documentId,
+  deleteField,
 } from 'firebase/firestore'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { db, secondaryAuth } from './firebase'
@@ -385,6 +386,25 @@ export async function updateTest(
   data: Partial<Pick<Test, 'testBankId' | 'classLevel' | 'subject' | 'subjectId' | 'language' | 'variantNumber' | 'timeLimit' | 'questionCount' | 'published' | 'title'>>
 ): Promise<void> {
   await updateDoc(doc(db, 'tests', id), data)
+}
+
+function generateShareToken(): string {
+  const chars = 'abcdefghijkmnpqrstuvwxyz23456789'
+  let token = ''
+  for (let i = 0; i < 10; i++) {
+    token += chars[Math.floor(Math.random() * chars.length)]
+  }
+  return token
+}
+
+export async function openTestAccess(testId: string): Promise<string> {
+  const token = generateShareToken()
+  await updateDoc(doc(db, 'tests', testId), { shareToken: token })
+  return token
+}
+
+export async function closeTestAccess(testId: string): Promise<void> {
+  await updateDoc(doc(db, 'tests', testId), { shareToken: deleteField() })
 }
 
 export async function deleteTest(id: string): Promise<void> {

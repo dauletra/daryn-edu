@@ -59,6 +59,7 @@ export interface Test {
   variantNumber: number
   createdBy: string
   published: boolean
+  shareToken?: string
   timeLimit: number
   questionCount: number
   createdAt: Timestamp | Date

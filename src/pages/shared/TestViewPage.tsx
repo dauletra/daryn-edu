@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
-import { getTest, getQuestions } from '@/services/db'
+import { getTest, getQuestions, openTestAccess, closeTestAccess } from '@/services/db'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
 import { MathText } from '@/components/ui/MathText'
+import { useToast } from '@/context/ToastContext'
 
 interface TestViewPageProps {
   backTo: string
@@ -12,10 +15,14 @@ interface TestViewPageProps {
 
 export function TestViewPage({ backTo, backLabel }: TestViewPageProps) {
   const { id: testId } = useParams<{ id: string }>()
+  const { showSuccess, showError } = useToast()
+  const [refreshKey, setRefreshKey] = useState(0)
+  const [loadingAccess, setLoadingAccess] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   const { data: test, loading: loadingTest } = useFirestoreQuery(
     () => getTest(testId!),
-    [testId],
+    [testId, refreshKey],
   )
   const { data: questions, loading: loadingQuestions } = useFirestoreQuery(
     () => getQuestions(testId!),
@@ -26,6 +33,39 @@ export function TestViewPage({ backTo, backLabel }: TestViewPageProps) {
   if (!test) return <p className="text-gray-500">Тест не найден</p>
 
   const bankCount = questions?.length ?? 0
+  const shareUrl = `${window.location.origin}/open-test/${testId}`
+
+  async function handleOpenAccess() {
+    setLoadingAccess(true)
+    try {
+      await openTestAccess(testId!)
+      setRefreshKey((k) => k + 1)
+      showSuccess('Доступ открыт')
+    } catch {
+      showError('Ошибка при открытии доступа')
+    } finally {
+      setLoadingAccess(false)
+    }
+  }
+
+  async function handleCloseAccess() {
+    setLoadingAccess(true)
+    try {
+      await closeTestAccess(testId!)
+      setRefreshKey((k) => k + 1)
+      showSuccess('Доступ закрыт')
+    } catch {
+      showError('Ошибка при закрытии доступа')
+    } finally {
+      setLoadingAccess(false)
+    }
+  }
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(shareUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   return (
     <div>
@@ -44,6 +84,34 @@ export function TestViewPage({ backTo, backLabel }: TestViewPageProps) {
           </Badge>
         </div>
       </div>
+
+      {/* Share access block — only for published tests */}
+      {test.published && (
+        <div className="mb-4">
+          {!test.shareToken ? (
+            <Button
+              variant="primary"
+              isLoading={loadingAccess}
+              onClick={handleOpenAccess}
+            >
+              Открыть доступ к ответам
+            </Button>
+          ) : (
+            <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+              <p className="text-sm font-medium text-green-800 mb-1">Доступ открыт — ссылка для просмотра теста</p>
+              <p className="text-sm text-green-700 break-all mb-2">{shareUrl}</p>
+              <div className="flex gap-2">
+                <Button variant="secondary" onClick={handleCopy}>
+                  {copied ? 'Скопировано!' : 'Скопировать ссылку'}
+                </Button>
+                <Button variant="danger" isLoading={loadingAccess} onClick={handleCloseAccess}>
+                  Отменить доступ
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Bank counter */}
       <div className="bg-blue-50 rounded-lg px-4 py-3 mb-4 text-sm text-blue-700">

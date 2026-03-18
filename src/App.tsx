@@ -32,6 +32,7 @@ const TestResultsPage   = lazy(() => import('@/pages/Moderator/TestResultsPage')
 const StudentDashboard  = lazy(() => import('@/pages/Student/StudentDashboard').then(m => ({ default: m.StudentDashboard })))
 const StudentTestsPage  = lazy(() => import('@/pages/Student/StudentTestsPage').then(m => ({ default: m.StudentTestsPage })))
 const TestTakingPage    = lazy(() => import('@/pages/Student/TestTakingPage').then(m => ({ default: m.TestTakingPage })))
+const OpenTestPage      = lazy(() => import('@/pages/public/OpenTestPage').then(m => ({ default: m.OpenTestPage })))
 
 const fallback = (
   <div className="flex items-center justify-center h-screen">
@@ -43,6 +44,10 @@ const router = createBrowserRouter([
   {
     path: '/login',
     element: <Suspense fallback={fallback}><LoginPage /></Suspense>,
+  },
+  {
+    path: '/open-test/:id',
+    element: <Suspense fallback={fallback}><OpenTestPage /></Suspense>,
   },
   {
     path: '/',

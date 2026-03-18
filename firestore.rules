@@ -52,15 +52,17 @@ service cloud.firestore {
 
     // Tests collection
     match /tests/{testId} {
-      allow read: if isAuth();
+      allow read: if isAuth() || resource.data.shareToken != null;
       allow create: if isModerator() || isAdmin();
-      allow update: if (isModerator() || isAdmin()) && resource.data.createdBy == request.auth.uid;
-      allow delete: if (isModerator() || isAdmin()) && resource.data.createdBy == request.auth.uid;
+      allow update: if isAdmin() || (isModerator() && resource.data.createdBy == request.auth.uid);
+      allow delete: if isAdmin() || (isModerator() && resource.data.createdBy == request.auth.uid);
 
       // Questions subcollection — students cannot read (correctIndex is hidden)
       // Students receive questions via startTest Cloud Function (without correctIndex)
+      // Exception: readable without auth when the test has shareToken set (open access)
       match /questions/{questionId} {
-        allow read: if isModerator() || isAdmin();
+        allow read: if isModerator() || isAdmin()
+          || get(/databases/$(database)/documents/tests/$(testId)).data.shareToken != null;
         allow create, update, delete: if (isModerator() || isAdmin())
           && get(/databases/$(database)/documents/tests/$(testId)).data.createdBy == request.auth.uid;
       }
