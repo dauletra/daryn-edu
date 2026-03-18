@@ -565,6 +565,34 @@ export async function getResultsByBank(testBankId: string): Promise<TestResult[]
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as TestResult)
 }
 
+export async function getResultsByBankAndClass(
+  testBankId: string,
+  classId: string
+): Promise<TestResult[]> {
+  const q = query(
+    collection(db, 'results'),
+    where('status', '==', 'completed'),
+    where('testBankId', '==', testBankId),
+    where('classId', '==', classId)
+  )
+  const snap = await getDocs(q)
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as TestResult)
+}
+
+export async function getResultsByBankAndClassLevel(
+  testBankId: string,
+  classLevel: number
+): Promise<TestResult[]> {
+  const q = query(
+    collection(db, 'results'),
+    where('status', '==', 'completed'),
+    where('testBankId', '==', testBankId),
+    where('classLevel', '==', classLevel)
+  )
+  const snap = await getDocs(q)
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as TestResult)
+}
+
 export async function resetStudentTestAccess(studentId: string, testId: string): Promise<void> {
   const resultId = `${studentId}_${testId}`
   await deleteDoc(doc(db, 'results', resultId))

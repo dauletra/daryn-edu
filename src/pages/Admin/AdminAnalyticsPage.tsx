@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
-import { getClasses, getUsers, getSubjects, getResultsByBank } from '@/services/db'
+import { getClasses, getUsers, getSubjects, getResultsByBankAndClassLevel } from '@/services/db'
 import { useBank } from '@/context/BankContext'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import type { ClassLevel, TestResult } from '@/types'
@@ -25,32 +25,29 @@ export function AdminAnalyticsPage() {
     setFilterSubjectId('')
   }, [selectedBankId])
 
-  const { data: bankResults, loading: loadingResults } = useFirestoreQuery(
-    () => selectedBankId ? getResultsByBank(selectedBankId) : Promise.resolve([]),
-    [selectedBankId]
+  const { data: levelResults, loading: loadingResults } = useFirestoreQuery(
+    () => selectedBankId && filterClassLevel
+      ? getResultsByBankAndClassLevel(selectedBankId, filterClassLevel)
+      : Promise.resolve([]),
+    [selectedBankId, filterClassLevel]
   )
 
   // Filter classes by selected grade level
   const filteredClasses = useMemo(() => {
-    if (!classes) return []
-    if (!filterClassLevel) return classes
+    if (!classes || !filterClassLevel) return []
     return classes.filter((c) => c.classLevel === filterClassLevel)
   }, [classes, filterClassLevel])
 
-  // Apply client-side filters
+  // Apply client-side subject filter (classLevel already filtered at DB level)
   const filteredResults = useMemo(() => {
-    if (!bankResults) return []
-    return (bankResults as TestResult[]).filter((r) => {
-      if (filterClassLevel && r.classLevel !== filterClassLevel) return false
-      if (filterSubjectId && r.subjectId !== filterSubjectId) return false
-      return true
-    })
-  }, [bankResults, filterClassLevel, filterSubjectId])
+    if (!levelResults) return []
+    if (!filterSubjectId) return levelResults as TestResult[]
+    return (levelResults as TestResult[]).filter((r) => r.subjectId === filterSubjectId)
+  }, [levelResults, filterSubjectId])
 
   // Enrolled students matching the parallel filter
   const filteredStudents = useMemo(() => {
-    if (!students) return []
-    if (!filterClassLevel) return students
+    if (!students || !filterClassLevel) return []
     const classIds = new Set(filteredClasses.map((c) => c.id))
     return students.filter((s) => s.classId && classIds.has(s.classId))
   }, [students, filteredClasses, filterClassLevel])
@@ -88,34 +85,39 @@ export function AdminAnalyticsPage() {
               onChange={(e) => {
                 const level = e.target.value ? (Number(e.target.value) as ClassLevel) : ''
                 setFilterClassLevel(level)
+                setFilterSubjectId('')
               }}
               className="px-2 py-1 border border-gray-300 rounded-lg text-sm"
             >
-              <option value="">Все</option>
+              <option value="" disabled>Выберите параллель</option>
               {CLASS_LEVELS.map((l) => (
                 <option key={l} value={l}>{l} класс</option>
               ))}
             </select>
           </div>
 
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">Предмет:</label>
-            <select
-              value={filterSubjectId}
-              onChange={(e) => setFilterSubjectId(e.target.value)}
-              className="px-2 py-1 border border-gray-300 rounded-lg text-sm"
-            >
-              <option value="">Все</option>
-              {subjects?.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          </div>
+          {filterClassLevel && (
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Предмет:</label>
+              <select
+                value={filterSubjectId}
+                onChange={(e) => setFilterSubjectId(e.target.value)}
+                className="px-2 py-1 border border-gray-300 rounded-lg text-sm"
+              >
+                <option value="">Все</option>
+                {subjects?.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       )}
 
       {!selectedBankId ? (
         <p className="text-gray-500 text-center py-12">Выберите банк тестов вверху страницы</p>
+      ) : !filterClassLevel ? (
+        <p className="text-gray-500 text-center py-12">Выберите параллель для просмотра аналитики</p>
       ) : loadingResults ? (
         <LoadingSpinner />
       ) : (

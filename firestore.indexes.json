@@ -39,6 +39,24 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "testBankId", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "results",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "testBankId", "order": "ASCENDING" },
+        { "fieldPath": "classId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "results",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "testBankId", "order": "ASCENDING" },
+        { "fieldPath": "classLevel", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useFirestoreQuery } from '@/hooks/useFirestoreQuery'
-import { getClasses, getUsers, getResultsByBank, getTests, resetStudentTestAccess } from '@/services/db'
+import { getClasses, getUsers, getResultsByBankAndClass, getTests, resetStudentTestAccess } from '@/services/db'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/context/ToastContext'
 import { useBank } from '@/context/BankContext'
@@ -28,9 +28,11 @@ export function AdminResultsPage() {
     setFilterSubjectId('')
   }, [selectedBankId])
 
-  const { data: bankResults, loading: loadingResults, refetch: refetchResults } = useFirestoreQuery(
-    () => selectedBankId ? getResultsByBank(selectedBankId) : Promise.resolve([]),
-    [selectedBankId]
+  const { data: classResults, loading: loadingResults, refetch: refetchResults } = useFirestoreQuery(
+    () => selectedBankId && filterClassId
+      ? getResultsByBankAndClass(selectedBankId, filterClassId)
+      : Promise.resolve([]),
+    [selectedBankId, filterClassId]
   )
 
   // Map testId → createdBy for ownership check
@@ -72,8 +74,7 @@ export function AdminResultsPage() {
 
   // Subjects that actually have results in the selected bank+class
   const activeSubjects = useMemo(() => {
-    if (!bankResults || !filterClassId) return []
-    const classResults = bankResults.filter((r) => r.classId === filterClassId)
+    if (!classResults || !filterClassId) return []
     const seen = new Map<string, string>()
     for (const r of classResults) {
       if (!seen.has(r.subjectId)) seen.set(r.subjectId, r.subject)
@@ -81,7 +82,7 @@ export function AdminResultsPage() {
     return Array.from(seen.entries())
       .map(([subjectId, subjectName]) => ({ subjectId, subjectName }))
       .sort((a, b) => a.subjectName.localeCompare(b.subjectName))
-  }, [bankResults, filterClassId])
+  }, [classResults, filterClassId])
 
   // Students belonging to the selected class
   const classStudents = useMemo(() => {
@@ -140,7 +141,7 @@ export function AdminResultsPage() {
                 bank: selectedBank,
                 className: selectedClass?.name ?? filterClassId,
                 classStudents,
-                bankResults: bankResults ?? [],
+                bankResults: classResults ?? [],
                 classId: filterClassId,
                 activeSubjects,
               })
@@ -161,8 +162,7 @@ export function AdminResultsPage() {
         <p className="text-gray-500 text-center py-12">Выберите класс для просмотра результатов</p>
       ) : filterSubjectId ? (
         <SubjectView
-          bankResults={bankResults ?? []}
-          classId={filterClassId}
+          bankResults={classResults ?? []}
           subjectId={filterSubjectId}
           className={selectedClass?.name ?? filterClassId}
           classStudents={classStudents}
@@ -173,8 +173,7 @@ export function AdminResultsPage() {
         />
       ) : (
         <ClassView
-          bankResults={bankResults ?? []}
-          classId={filterClassId}
+          bankResults={classResults ?? []}
           activeSubjects={activeSubjects}
           classStudents={classStudents}
         />
@@ -199,36 +198,30 @@ interface SubjectMeta { subjectId: string; subjectName: string }
 
 interface ClassViewProps {
   bankResults: TestResult[]
-  classId: string
   activeSubjects: SubjectMeta[]
   classStudents: AppUser[]
 }
 
-function ClassView({ bankResults, classId, activeSubjects, classStudents }: ClassViewProps) {
-  const classResults = useMemo(
-    () => bankResults.filter((r) => r.classId === classId),
-    [bankResults, classId]
-  )
-
+function ClassView({ bankResults, activeSubjects, classStudents }: ClassViewProps) {
   // Map: studentId → subjectId → TestResult
   const resultMap = useMemo(() => {
     const map = new Map<string, Map<string, TestResult>>()
-    for (const r of classResults) {
+    for (const r of bankResults) {
       if (!map.has(r.studentId)) map.set(r.studentId, new Map())
       map.get(r.studentId)!.set(r.subjectId, r)
     }
     return map
-  }, [classResults])
+  }, [bankResults])
 
   // Max question count per subject (for header label)
   const subjectTotals = useMemo(() => {
     const map = new Map<string, number>()
-    for (const r of classResults) {
+    for (const r of bankResults) {
       const cur = map.get(r.subjectId) ?? 0
       map.set(r.subjectId, Math.max(cur, r.questionIds.length))
     }
     return map
-  }, [classResults])
+  }, [bankResults])
 
   const rows = useMemo(() => {
     return classStudents
@@ -333,7 +326,6 @@ function ClassView({ bankResults, classId, activeSubjects, classStudents }: Clas
 
 interface SubjectViewProps {
   bankResults: TestResult[]
-  classId: string
   subjectId: string
   className: string
   classStudents: AppUser[]
@@ -341,16 +333,16 @@ interface SubjectViewProps {
   onResetRequest?: (studentId: string, studentName: string, testId: string) => void
 }
 
-function SubjectView({ bankResults, classId, subjectId, className, classStudents, canReset, onResetRequest }: SubjectViewProps) {
+function SubjectView({ bankResults, subjectId, className, classStudents, canReset, onResetRequest }: SubjectViewProps) {
   const resultMap = useMemo(() => {
     const map = new Map<string, TestResult>()
     for (const r of bankResults) {
-      if (r.classId === classId && r.subjectId === subjectId) {
+      if (r.subjectId === subjectId) {
         map.set(r.studentId, r)
       }
     }
     return map
-  }, [bankResults, classId, subjectId])
+  }, [bankResults, subjectId])
 
   const rows = useMemo(() => {
     return classStudents
