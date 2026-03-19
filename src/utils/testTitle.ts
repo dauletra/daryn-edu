@@ -4,7 +4,7 @@ export function generateTestTitle(data: {
   classLevel: number
   variantNumber: number
 }): string {
-  return `${data.subject} - ${data.classLevel} кл. - Вариант ${data.variantNumber}`
+  return `${data.subject} - ${data.classLevel} сын. - Нұсқа ${data.variantNumber}`
 }
 
 export function formatTestTitle(test: {
@@ -17,5 +17,5 @@ export function formatTestTitle(test: {
     test.language === 'ru' ? ' (рус)' :
     test.language === 'en' ? ' (eng)' :
     ''
-  return `${test.subject}${langLabel} · ${test.classLevel} кл · вар ${test.variantNumber}`
+  return `${test.subject}${langLabel} · ${test.classLevel} сын · нұс ${test.variantNumber}`
 }

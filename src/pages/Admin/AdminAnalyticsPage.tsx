@@ -79,7 +79,7 @@ export function AdminAnalyticsPage() {
       {selectedBankId && (
         <div className="flex flex-wrap items-center gap-4 mb-6">
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">Параллель:</label>
+            <label className="text-sm text-gray-600">Параллель (сынып):</label>
             <select
               value={filterClassLevel}
               onChange={(e) => {
@@ -89,22 +89,22 @@ export function AdminAnalyticsPage() {
               }}
               className="px-2 py-1 border border-gray-300 rounded-lg text-sm"
             >
-              <option value="" disabled>Выберите параллель</option>
+              <option value="" disabled>Параллельді таңдаңыз</option>
               {CLASS_LEVELS.map((l) => (
-                <option key={l} value={l}>{l} класс</option>
+                <option key={l} value={l}>{l} сынып</option>
               ))}
             </select>
           </div>
 
           {filterClassLevel && (
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600">Предмет:</label>
+              <label className="text-sm text-gray-600">Пән:</label>
               <select
                 value={filterSubjectId}
                 onChange={(e) => setFilterSubjectId(e.target.value)}
                 className="px-2 py-1 border border-gray-300 rounded-lg text-sm"
               >
-                <option value="">Все</option>
+                <option value="">Барлығы</option>
                 {subjects?.map((s) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
@@ -115,9 +115,9 @@ export function AdminAnalyticsPage() {
       )}
 
       {!selectedBankId ? (
-        <p className="text-gray-500 text-center py-12">Выберите банк тестов вверху страницы</p>
+        <p className="text-gray-500 text-center py-12">Беттің жоғарғы жағынан тест банкін таңдаңыз</p>
       ) : !filterClassLevel ? (
-        <p className="text-gray-500 text-center py-12">Выберите параллель для просмотра аналитики</p>
+        <p className="text-gray-500 text-center py-12">Аналитиканы қарау үшін параллельді таңдаңыз</p>
       ) : loadingResults ? (
         <LoadingSpinner />
       ) : (
@@ -132,7 +132,7 @@ export function AdminAnalyticsPage() {
                     <span className="text-base font-normal text-gray-400"> / {overallStats.enrolledStudents}</span>
                   )}
                 </div>
-                <div className="text-xs text-gray-500">Учеников сдали</div>
+                <div className="text-xs text-gray-500">Оқушылар тапсырды</div>
               </div>
               <div className="bg-white rounded-lg p-3 shadow-sm">
                 <div className="text-2xl font-bold text-blue-600">
@@ -140,11 +140,11 @@ export function AdminAnalyticsPage() {
                     ? Math.round(overallStats.uniqueStudents / overallStats.enrolledStudents * 100)
                     : 0}%
                 </div>
-                <div className="text-xs text-gray-500">Охват учеников</div>
+                <div className="text-xs text-gray-500">Оқушылар қамтуы</div>
               </div>
               <div className="bg-white rounded-lg p-3 shadow-sm">
                 <div className="text-2xl font-bold text-gray-900">{overallStats.avgScore}%</div>
-                <div className="text-xs text-gray-500">Средний балл</div>
+                <div className="text-xs text-gray-500">Орташа балл</div>
               </div>
             </div>
           )}
@@ -152,8 +152,8 @@ export function AdminAnalyticsPage() {
           {/* Tabs */}
           <div className="flex gap-1 mb-4 border-b border-gray-200">
             {([
-              { key: 'classes' as Tab, label: 'По классам' },
-              { key: 'subjects' as Tab, label: 'По предметам' },
+              { key: 'classes' as Tab, label: 'Сыныптар бойынша' },
+              { key: 'subjects' as Tab, label: 'Пәндер бойынша' },
             ]).map(({ key, label }) => (
               <button
                 key={key}
@@ -176,10 +176,10 @@ export function AdminAnalyticsPage() {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Класс</th>
-                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Охват</th>
-                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Средний балл</th>
-                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Средняя оценка</th>
+                      <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Сынып</th>
+                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Қамту</th>
+                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Орташа балл</th>
+                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Орташа баға</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -204,7 +204,7 @@ export function AdminAnalyticsPage() {
                 </table>
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-8">Нет данных для отображения</p>
+              <p className="text-gray-500 text-center py-8">Көрсетуге деректер жоқ</p>
             )
           )}
 
@@ -214,10 +214,10 @@ export function AdminAnalyticsPage() {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Предмет</th>
-                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Учеников сдали</th>
-                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Средний балл</th>
-                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Средняя оценка</th>
+                      <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Пән</th>
+                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Оқушылар тапсырды</th>
+                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Орташа балл</th>
+                      <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Орташа баға</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -237,7 +237,7 @@ export function AdminAnalyticsPage() {
                 </table>
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-8">Нет данных для отображения</p>
+              <p className="text-gray-500 text-center py-8">Көрсетуге деректер жоқ</p>
             )
           )}
         </>

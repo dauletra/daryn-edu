@@ -17,29 +17,30 @@ export function ModeratorLayout() {
           <h2 className="text-lg font-bold text-gray-900">EduCore</h2>
           <p className="text-sm text-gray-500">{user?.name}</p>
           <p className="text-xs text-gray-400">Модератор</p>
+
         </div>
 
         <nav className="flex-1 p-4 flex flex-col gap-1">
           <NavLink to="/moderator" end className={navLinkClass}>
-            Главная
+            Басты бет
           </NavLink>
           <NavLink to="/moderator/subjects" className={navLinkClass}>
-            Предметы
+            Пәндер
           </NavLink>
           <NavLink to="/moderator/tests" className={navLinkClass}>
-            Тесты
+            Тесттер
           </NavLink>
           <NavLink to="/moderator/results" className={navLinkClass}>
-            Результаты
+            Нәтижелер
           </NavLink>
           <NavLink to="/moderator/analytics" className={navLinkClass}>
             Аналитика
           </NavLink>
           <NavLink to="/moderator/students" className={navLinkClass}>
-            Ученики
+            Оқушылар
           </NavLink>
           <NavLink to="/moderator/classes" className={navLinkClass}>
-            Классы
+            Сыныптар
           </NavLink>
         </nav>
         <div className="p-4 border-t border-gray-200">
@@ -47,7 +48,7 @@ export function ModeratorLayout() {
             onClick={signOut}
             className="w-full px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
           >
-            Выйти
+            Шығу
           </button>
         </div>
       </aside>

@@ -16,30 +16,30 @@ export function AdminLayout() {
         <div className="p-4 border-b border-gray-200">
           <h2 className="text-lg font-bold text-gray-900">EduCore</h2>
           <p className="text-sm text-gray-500">{user?.name}</p>
-          <p className="text-xs text-gray-400">Администратор</p>
+          <p className="text-xs text-gray-400">Әкімші</p>
         </div>
 
         <nav className="flex-1 p-4 flex flex-col gap-1">
           <NavLink to="/admin" end className={navLinkClass}>
-            Главная
+            Басты бет
           </NavLink>
           <NavLink to="/admin/moderators" className={navLinkClass}>
-            Модераторы
+            Модераторлар
           </NavLink>
           <NavLink to="/admin/classes" className={navLinkClass}>
-            Классы
+            Сыныптар
           </NavLink>
           <NavLink to="/admin/students" className={navLinkClass}>
-            Ученики
+            Оқушылар
           </NavLink>
           <NavLink to="/admin/subjects" className={navLinkClass}>
-            Предметы
+            Пәндер
           </NavLink>
           <NavLink to="/admin/test-banks" className={navLinkClass}>
-            Банки тестов
+            Тест банктары
           </NavLink>
           <NavLink to="/admin/results" className={navLinkClass}>
-            Результаты
+            Нәтижелер
           </NavLink>
           <NavLink to="/admin/analytics" className={navLinkClass}>
             Аналитика
@@ -50,7 +50,7 @@ export function AdminLayout() {
             onClick={signOut}
             className="w-full px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
           >
-            Выйти
+            Шығу
           </button>
         </div>
       </aside>

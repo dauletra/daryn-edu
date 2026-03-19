@@ -33,17 +33,17 @@ export function TestCreatePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const newErrors: Record<string, string> = {}
-    if (!subjectId) newErrors.subject = 'Выберите предмет'
-    if (!language.trim()) newErrors.language = 'Укажите язык'
-    if (!variantNumber || Number(variantNumber) < 1) newErrors.variantNumber = 'Укажите номер варианта'
-    if (!timeLimit || Number(timeLimit) < 1) newErrors.timeLimit = 'Укажите время'
-    if (!questionCount || Number(questionCount) < 1) newErrors.questionCount = 'Укажите количество'
+    if (!subjectId) newErrors.subject = 'Пәнді таңдаңыз'
+    if (!language.trim()) newErrors.language = 'Тілді көрсетіңіз'
+    if (!variantNumber || Number(variantNumber) < 1) newErrors.variantNumber = 'Нұсқа нөмірін көрсетіңіз'
+    if (!timeLimit || Number(timeLimit) < 1) newErrors.timeLimit = 'Уақытты көрсетіңіз'
+    if (!questionCount || Number(questionCount) < 1) newErrors.questionCount = 'Санды көрсетіңіз'
     setErrors(newErrors)
     if (Object.keys(newErrors).length > 0) return
 
     const selectedSubject = subjects?.find((s) => s.id === subjectId)
     if (!selectedSubject) {
-      showError('Предмет не найден')
+      showError('Пән табылмады')
       return
     }
 
@@ -60,10 +60,10 @@ export function TestCreatePage() {
         timeLimit: Number(timeLimit),
         questionCount: Number(questionCount),
       })
-      showSuccess('Тест создан')
+      showSuccess('Тест жасалды')
       navigate(`/moderator/tests/${testId}/edit`)
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка создания')
+      showError(err instanceof Error ? err.message : 'Жасау қатесі')
     } finally {
       setSubmitting(false)
     }
@@ -73,26 +73,26 @@ export function TestCreatePage() {
 
   return (
     <div className="max-w-lg">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Создать тест</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Тест жасау</h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 bg-white rounded-xl shadow-sm p-6">
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Банк тестов</label>
+          <label className="text-sm font-medium text-gray-700">Тест банкі</label>
           <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-700">
             {selectedBank
-              ? `${selectedBank.name} · ${selectedBank.quarter} четв. · ${selectedBank.academicYear}–${selectedBank.academicYear + 1}`
-              : <span className="text-gray-400">Банк не выбран</span>
+              ? `${selectedBank.name} · ${selectedBank.quarter} тоқс. · ${selectedBank.academicYear}–${selectedBank.academicYear + 1}`
+              : <span className="text-gray-400">Банк таңдалмаған</span>
             }
           </div>
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Предмет</label>
+          <label className="text-sm font-medium text-gray-700">Пән</label>
           <select
             value={subjectId}
             onChange={(e) => setSubjectId(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">Выберите предмет</option>
+            <option value="">Пәнді таңдаңыз</option>
             {subjects?.map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
@@ -102,19 +102,19 @@ export function TestCreatePage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Класс</label>
+            <label className="text-sm font-medium text-gray-700">Сынып</label>
             <select
               value={classLevel}
               onChange={(e) => setClassLevel(Number(e.target.value) as ClassLevel)}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {CLASS_LEVELS.map((l) => (
-                <option key={l} value={l}>{l} класс</option>
+                <option key={l} value={l}>{l} сынып</option>
               ))}
             </select>
           </div>
           <Input
-            label="Номер варианта"
+            label="Нұсқа нөмірі"
             type="number"
             value={variantNumber}
             onChange={(e) => setVariantNumber(e.target.value)}
@@ -124,7 +124,7 @@ export function TestCreatePage() {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Язык</label>
+          <label className="text-sm font-medium text-gray-700">Тіл</label>
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
@@ -139,7 +139,7 @@ export function TestCreatePage() {
 
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="Лимит времени (минуты)"
+            label="Уақыт шегі (минут)"
             type="number"
             value={timeLimit}
             onChange={(e) => setTimeLimit(e.target.value)}
@@ -147,7 +147,7 @@ export function TestCreatePage() {
             min="1"
           />
           <Input
-            label="Вопросов для ученика"
+            label="Оқушыға арналған сұрақтар саны"
             type="number"
             value={questionCount}
             onChange={(e) => setQuestionCount(e.target.value)}
@@ -158,9 +158,9 @@ export function TestCreatePage() {
 
         <div className="flex justify-end gap-2 mt-2">
           <Button variant="secondary" type="button" onClick={() => navigate('/moderator/tests')}>
-            Отмена
+            Болдырмау
           </Button>
-          <Button type="submit" isLoading={submitting}>Создать</Button>
+          <Button type="submit" isLoading={submitting}>Жасау</Button>
         </div>
       </form>
     </div>

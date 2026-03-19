@@ -31,9 +31,9 @@ export function TestBankDetailPage() {
   if (!bank) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">Банк тестов не найден</p>
+        <p className="text-gray-500">Тест банкі табылмады</p>
         <Link to="/admin/test-banks">
-          <Button variant="secondary" className="mt-4">Назад к банкам</Button>
+          <Button variant="secondary" className="mt-4">Банктерге оралу</Button>
         </Link>
       </div>
     )
@@ -48,10 +48,10 @@ export function TestBankDetailPage() {
     setSubmitting(true)
     try {
       await updateTest(test.id, { published: !test.published })
-      showSuccess(test.published ? 'Тест снят с публикации' : 'Тест опубликован')
+      showSuccess(test.published ? 'Тест жарияланымнан алынды' : 'Тест жарияланды')
       refetch()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка')
+      showError(err instanceof Error ? err.message : 'Қате')
     } finally {
       setSubmitting(false)
     }
@@ -62,11 +62,11 @@ export function TestBankDetailPage() {
     setSubmitting(true)
     try {
       await deleteTest(confirmDelete.id)
-      showSuccess('Тест удалён')
+      showSuccess('Тест жойылды')
       setConfirmDelete(null)
       refetch()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка удаления')
+      showError(err instanceof Error ? err.message : 'Жою қатесі')
     } finally {
       setSubmitting(false)
     }
@@ -79,7 +79,7 @@ export function TestBankDetailPage() {
     <div>
       <div className="flex items-center gap-3 mb-6">
         <Link to="/admin/test-banks" className="text-sm text-blue-600 hover:text-blue-800">
-          Банки тестов
+          Тест банктары
         </Link>
         <span className="text-gray-400">/</span>
         <h1 className="text-2xl font-bold text-gray-900">{bank.name}</h1>
@@ -88,20 +88,20 @@ export function TestBankDetailPage() {
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-lg p-3 shadow-sm">
           <div className="text-2xl font-bold text-gray-900">{tests?.length ?? 0}</div>
-          <div className="text-xs text-gray-500">Всего тестов</div>
+          <div className="text-xs text-gray-500">Барлық тесттер</div>
         </div>
         <div className="bg-white rounded-lg p-3 shadow-sm">
           <div className="text-2xl font-bold text-green-600">{publishedCount}</div>
-          <div className="text-xs text-gray-500">Опубликовано</div>
+          <div className="text-xs text-gray-500">Жарияланған</div>
         </div>
         <div className="bg-white rounded-lg p-3 shadow-sm">
           <div className="text-2xl font-bold text-yellow-600">{draftCount}</div>
-          <div className="text-xs text-gray-500">Черновики</div>
+          <div className="text-xs text-gray-500">Жобалар</div>
         </div>
       </div>
 
       <div className="text-sm text-gray-500 mb-4">
-        {bank.quarter} четверть, {bank.academicYear} г.
+        {bank.quarter} тоқсан, {bank.academicYear} ж.
       </div>
 
       {tests && tests.length > 0 ? (
@@ -109,12 +109,12 @@ export function TestBankDetailPage() {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Название</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Предмет</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Атауы</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Пән</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Автор</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Вопросов</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Статус</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Действия</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Сұрақтар</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Мәртебе</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Әрекеттер</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -126,7 +126,7 @@ export function TestBankDetailPage() {
                   <td className="px-4 py-3 text-sm text-gray-500">{test.questionCount}</td>
                   <td className="px-4 py-3">
                     <Badge variant={test.published ? 'success' : 'warning'}>
-                      {test.published ? 'Опубликован' : 'Черновик'}
+                      {test.published ? 'Жарияланған' : 'Жоба'}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
@@ -135,21 +135,21 @@ export function TestBankDetailPage() {
                         to={`/admin/tests/${test.id}/view`}
                         className="text-sm text-blue-600 hover:text-blue-800"
                       >
-                        Просмотреть
+                        Қарау
                       </Link>
                       <button
                         onClick={() => void handlePublishToggle(test)}
                         disabled={submitting}
                         className="text-sm text-indigo-600 hover:text-indigo-800 disabled:opacity-40 cursor-pointer"
                       >
-                        {test.published ? 'Снять' : 'Опубликовать'}
+                        {test.published ? 'Алу' : 'Жариялау'}
                       </button>
                       <button
                         onClick={() => setConfirmDelete({ id: test.id, title: formatTestTitle(test) })}
                         disabled={submitting}
                         className="text-sm text-red-600 hover:text-red-800 disabled:opacity-40 cursor-pointer"
                       >
-                        Удалить
+                        Жою
                       </button>
                     </div>
                   </td>
@@ -159,16 +159,16 @@ export function TestBankDetailPage() {
           </table>
         </div>
       ) : (
-        <p className="text-gray-500 text-center py-8">В этом банке пока нет тестов</p>
+        <p className="text-gray-500 text-center py-8">Бұл банкте тесттер әлі жоқ</p>
       )}
 
-      <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Удалить тест?">
+      <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Тестті жою керек пе?">
         <p className="text-sm text-gray-600 mb-4">
-          Тест <strong>{confirmDelete?.title}</strong> будет удалён вместе со всеми вопросами. Это действие нельзя отменить.
+          <strong>{confirmDelete?.title}</strong> тесті барлық сұрақтарымен жойылады. Бұл әрекетті болдырмауға болмайды.
         </p>
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Отмена</Button>
-          <Button variant="danger" isLoading={submitting} onClick={() => void handleDeleteConfirm()}>Удалить</Button>
+          <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Болдырмау</Button>
+          <Button variant="danger" isLoading={submitting} onClick={() => void handleDeleteConfirm()}>Жою</Button>
         </div>
       </Modal>
     </div>

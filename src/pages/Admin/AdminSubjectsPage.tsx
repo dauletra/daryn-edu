@@ -40,12 +40,12 @@ export function AdminSubjectsPage() {
     setSubmitting(true)
     try {
       await createSubject(name.trim(), user!.uid)
-      showSuccess('Предмет создан')
+      showSuccess('Пән жасалды')
       setModalOpen(false)
       resetForm()
       refetch()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка создания')
+      showError(err instanceof Error ? err.message : 'Жасау қатесі')
     } finally {
       setSubmitting(false)
     }
@@ -55,11 +55,11 @@ export function AdminSubjectsPage() {
     if (!confirmDelete) return
     try {
       await deleteSubject(confirmDelete.id)
-      showSuccess('Предмет удалён')
+      showSuccess('Пән жойылды')
       setConfirmDelete(null)
       refetch()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка удаления')
+      showError(err instanceof Error ? err.message : 'Жою қатесі')
     }
   }
 
@@ -68,8 +68,8 @@ export function AdminSubjectsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Предметы</h1>
-        <Button onClick={() => setModalOpen(true)}>Добавить предмет</Button>
+        <h1 className="text-2xl font-bold text-gray-900">Пәндер</h1>
+        <Button onClick={() => setModalOpen(true)}>Пән қосу</Button>
       </div>
 
       {subjects && subjects.length > 0 ? (
@@ -77,9 +77,9 @@ export function AdminSubjectsPage() {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Название</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Создал</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Действия</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Атауы</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Жасаған</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Әрекеттер</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -92,7 +92,7 @@ export function AdminSubjectsPage() {
                       onClick={() => setConfirmDelete({ id: subject.id, name: subject.name })}
                       className="text-sm text-red-600 hover:text-red-800 cursor-pointer"
                     >
-                      Удалить
+                      Жою
                     </button>
                   </td>
                 </tr>
@@ -101,26 +101,26 @@ export function AdminSubjectsPage() {
           </table>
         </div>
       ) : (
-        <p className="text-gray-500">Предметов пока нет</p>
+        <p className="text-gray-500">Пәндер әлі жоқ</p>
       )}
 
-      <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); resetForm() }} title="Новый предмет">
+      <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); resetForm() }} title="Жаңа пән">
         <form onSubmit={handleCreate} className="flex flex-col gap-4">
-          <Input label="Название" value={name} onChange={(e) => setName(e.target.value)} error={errors.name} placeholder="Математика" />
+          <Input label="Атауы" value={name} onChange={(e) => setName(e.target.value)} error={errors.name} placeholder="Математика" />
           <div className="flex justify-end gap-2 mt-2">
-            <Button variant="secondary" type="button" onClick={() => { setModalOpen(false); resetForm() }}>Отмена</Button>
-            <Button type="submit" isLoading={submitting}>Создать</Button>
+            <Button variant="secondary" type="button" onClick={() => { setModalOpen(false); resetForm() }}>Болдырмау</Button>
+            <Button type="submit" isLoading={submitting}>Жасау</Button>
           </div>
         </form>
       </Modal>
 
-      <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Удалить предмет?">
+      <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Пәнді жою керек пе?">
         <p className="text-sm text-gray-600 mb-4">
-          Предмет <strong>{confirmDelete?.name}</strong> будет удалён. Это действие нельзя отменить.
+          <strong>{confirmDelete?.name}</strong> пәні жойылады. Бұл әрекетті болдырмауға болмайды.
         </p>
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Отмена</Button>
-          <Button variant="danger" onClick={() => void handleDelete()}>Удалить</Button>
+          <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Болдырмау</Button>
+          <Button variant="danger" onClick={() => void handleDelete()}>Жою</Button>
         </div>
       </Modal>
     </div>

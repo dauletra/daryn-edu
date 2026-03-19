@@ -51,16 +51,16 @@ export function AIQuestionGenerator({ testId, subject, language, classLevel, onQ
 
   const handleGenerate = async () => {
     if (!topic.trim()) {
-      showError('Укажите тему')
+      showError('Тақырыпты көрсетіңіз')
       return
     }
     setGenerating(true)
     try {
       const questions = await generateQuestions(topic.trim(), `${classLevel} класс`, subject, questionCount, language)
       setGenerated(questions.map((q) => ({ ...q, selected: false })))
-      showSuccess(`Сгенерировано ${questions.length} вопросов`)
+      showSuccess(`${questions.length} сұрақ жасалды`)
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка генерации')
+      showError(err instanceof Error ? err.message : 'Жасау қатесі')
     } finally {
       setGenerating(false)
     }
@@ -103,7 +103,7 @@ export function AIQuestionGenerator({ testId, subject, language, classLevel, onQ
   const handleAddSelected = async () => {
     const selected = generated.filter((q) => q.selected)
     if (selected.length === 0) {
-      showError('Выберите хотя бы один вопрос')
+      showError('Кем дегенде бір сұрақ таңдаңыз')
       return
     }
     setAdding(true)
@@ -116,11 +116,11 @@ export function AIQuestionGenerator({ testId, subject, language, classLevel, onQ
           correctIndex: q.correctIndex,
         }))
       )
-      showSuccess(`Добавлено ${selected.length} вопросов в банк`)
+      showSuccess(`${selected.length} сұрақ банкке қосылды`)
       setGenerated((prev) => prev.filter((q) => !q.selected))
       onQuestionsAdded()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка добавления')
+      showError(err instanceof Error ? err.message : 'Қосу қатесі')
     } finally {
       setAdding(false)
     }
@@ -130,10 +130,10 @@ export function AIQuestionGenerator({ testId, subject, language, classLevel, onQ
     <div className="grid grid-cols-2 gap-6">
       {/* Left panel - generation form */}
       <div className="bg-white rounded-xl shadow-sm p-4">
-        <h3 className="font-semibold text-gray-900 mb-4">Генерация вопросов AI</h3>
+        <h3 className="font-semibold text-gray-900 mb-4">AI сұрақтар жасау</h3>
         <div className="flex flex-col gap-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Тема</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Тақырып</label>
             <textarea
               value={topic}
               onChange={(e) => handleTopicChange(e.target.value)}
@@ -143,7 +143,7 @@ export function AIQuestionGenerator({ testId, subject, language, classLevel, onQ
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Количество вопросов</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Сұрақтар саны</label>
             <div className="flex gap-2">
               {([10, 20, 30] as const).map((n) => (
                 <button
@@ -162,7 +162,7 @@ export function AIQuestionGenerator({ testId, subject, language, classLevel, onQ
             </div>
           </div>
           <Button onClick={handleGenerate} isLoading={generating} disabled={generating}>
-            Сгенерировать
+            Жасау
           </Button>
         </div>
       </div>
@@ -171,21 +171,21 @@ export function AIQuestionGenerator({ testId, subject, language, classLevel, onQ
       <div className="bg-white rounded-xl shadow-sm p-4 max-h-[70vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-gray-900">
-            Сгенерированные вопросы ({generated.length})
+            Жасалған сұрақтар ({generated.length})
           </h3>
           {generated.length > 0 && (
             <button
               onClick={toggleSelectAll}
               className="text-xs text-blue-600 hover:text-blue-800 cursor-pointer"
             >
-              {generated.every((q) => q.selected) ? 'Снять все' : 'Выбрать все'}
+              {generated.every((q) => q.selected) ? 'Барлығын алу' : 'Барлығын таңдау'}
             </button>
           )}
         </div>
 
         {generated.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-8">
-            Сгенерируйте вопросы с помощью AI
+            AI арқылы сұрақтар жасаңыз
           </p>
         ) : (
           <div className="flex flex-col gap-3">
@@ -224,7 +224,7 @@ export function AIQuestionGenerator({ testId, subject, language, classLevel, onQ
                       className="text-xs self-end"
                       onClick={() => setEditingIdx(null)}
                     >
-                      Готово
+                      Дайын
                     </Button>
                   </div>
                 ) : (
@@ -257,13 +257,13 @@ export function AIQuestionGenerator({ testId, subject, language, classLevel, onQ
                         onClick={() => setEditingIdx(idx)}
                         className="text-xs text-blue-600 hover:text-blue-800 cursor-pointer"
                       >
-                        Редактировать
+                        Өңдеу
                       </button>
                       <button
                         onClick={() => removeQuestion(idx)}
                         className="text-xs text-red-600 hover:text-red-800 cursor-pointer"
                       >
-                        Удалить
+                        Жою
                       </button>
                     </div>
                   </div>
@@ -276,7 +276,7 @@ export function AIQuestionGenerator({ testId, subject, language, classLevel, onQ
         {selectedCount > 0 && (
           <div className="sticky bottom-0 bg-white pt-3 mt-3 border-t border-gray-200">
             <Button onClick={handleAddSelected} isLoading={adding} className="w-full">
-              Добавить выбранные ({selectedCount}) в банк
+              Таңдалғандарды ({selectedCount}) банкке қосу
             </Button>
           </div>
         )}

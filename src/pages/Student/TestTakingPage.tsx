@@ -266,7 +266,7 @@ export function TestTakingPage() {
           <div className="flex justify-center gap-6 text-sm text-gray-600 mb-6">
             <div>
               <div className="font-bold text-lg text-gray-900">{test.questionCount}</div>
-              <div>вопросов</div>
+              <div>сұрақ</div>
             </div>
             <div>
               <div className="font-bold text-lg text-gray-900">{test.timeLimit}</div>
@@ -274,10 +274,10 @@ export function TestTakingPage() {
             </div>
           </div>
           <p className="text-xs text-gray-400 mb-4">
-            Тест будет проходить в полноэкранном режиме. После начала таймер нельзя остановить.
+            Тест толық экран режимінде өтеді. Басталғаннан кейін таймерді тоқтатуға болмайды.
           </p>
           <Button onClick={handleStartTest} className="w-full">
-            {isResume ? 'Продолжить тест' : 'Начать тест'}
+            {isResume ? 'Тестті жалғастыру' : 'Тестті бастау'}
           </Button>
         </div>
       </div>
@@ -295,16 +295,16 @@ export function TestTakingPage() {
     return (
       <div className="max-w-md mx-auto mt-12">
         <div className="bg-white rounded-xl shadow-sm p-6 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Тест завершён</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Тест аяқталды</h1>
           <div className={`text-5xl font-bold ${colorClass} mb-2`}>{score.percent}%</div>
           <p className="text-gray-600 text-lg">
-            {score.correct} из {score.total}
+            {score.correct} / {score.total}
           </p>
           <Button
             className="mt-6"
             onClick={() => navigate('/student/tests')}
           >
-            Вернуться к тестам
+            Тесттерге оралу
           </Button>
         </div>
       </div>
@@ -320,13 +320,13 @@ export function TestTakingPage() {
         {!isFullscreen && !showFullscreenWarning && (
           <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-2 flex items-center justify-between">
             <span className="text-sm text-yellow-700">
-              Тест лучше проходить в полноэкранном режиме
+              Тестті толық экран режимінде өткен дұрыс
             </span>
             <button
               onClick={enterFullscreen}
               className="text-sm text-yellow-700 font-medium hover:text-yellow-900 cursor-pointer"
             >
-              Вернуться в полноэкранный режим
+              Толық экран режиміне оралу
             </button>
           </div>
         )}
@@ -334,7 +334,7 @@ export function TestTakingPage() {
         {/* Header with timer */}
         <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
           <div className="text-sm text-gray-600">
-            Вопрос {currentIndex + 1} из {questions.length}
+            Сұрақ {currentIndex + 1} / {questions.length}
           </div>
           <div
             className={`text-2xl font-mono font-bold ${
@@ -398,21 +398,21 @@ export function TestTakingPage() {
               onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
               disabled={currentIndex === 0 || submitting || submitError}
             >
-              Назад
+              Артқа
             </Button>
             <Button
               variant="danger"
               onClick={() => setConfirmSubmitOpen(true)}
               disabled={submitting || submitError}
             >
-              Завершить тест
+              Тестті аяқтау
             </Button>
             <Button
               variant="secondary"
               onClick={() => setCurrentIndex((i) => Math.min(questions.length - 1, i + 1))}
               disabled={currentIndex === questions.length - 1 || submitting || submitError}
             >
-              Вперёд
+              Алға
             </Button>
           </div>
         </div>
@@ -421,25 +421,25 @@ export function TestTakingPage() {
         <Modal
           isOpen={confirmSubmitOpen}
           onClose={() => setConfirmSubmitOpen(false)}
-          title="Завершить тест?"
+          title="Тестті аяқтау керек пе?"
         >
           <div className="mb-4">
             {unansweredCount > 0 ? (
               <p className="text-sm text-red-600">
-                Без ответа: {unansweredCount} из {questions.length} вопросов
+                Жауапсыз: {unansweredCount} / {questions.length} сұрақ
               </p>
             ) : (
               <p className="text-sm text-green-600">
-                Вы ответили на все {questions.length} вопросов
+                Барлық {questions.length} сұраққа жауап бердіңіз
               </p>
             )}
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setConfirmSubmitOpen(false)}>
-              Вернуться
+              Оралу
             </Button>
             <Button variant="danger" onClick={() => handleSubmit()}>
-              Завершить
+              Аяқтау
             </Button>
           </div>
         </Modal>
@@ -450,7 +450,7 @@ export function TestTakingPage() {
             <div className="bg-white rounded-xl p-6 text-center shadow-lg max-w-sm mx-4">
               <LoadingSpinner />
               <p className="mt-3 text-gray-700 font-medium">
-                {timeExpired ? 'Время вышло! Отправка результатов...' : 'Отправка результатов...'}
+                {timeExpired ? 'Уақыт бітті! Нәтижелер жіберілуде...' : 'Нәтижелер жіберілуде...'}
               </p>
             </div>
           </div>
@@ -460,10 +460,10 @@ export function TestTakingPage() {
         {submitError && !submitting && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl p-6 text-center shadow-lg max-w-sm mx-4">
-              <p className="text-red-600 font-medium mb-2">Не удалось отправить результаты</p>
-              <p className="text-sm text-gray-500 mb-4">Проверьте подключение к интернету</p>
+              <p className="text-red-600 font-medium mb-2">Нәтижелерді жіберу мүмкін болмады</p>
+              <p className="text-sm text-gray-500 mb-4">Интернет қосылымын тексеріңіз</p>
               <Button onClick={() => handleSubmit(timeExpired)}>
-                Попробовать снова
+                Қайта көру
               </Button>
             </div>
           </div>
@@ -476,16 +476,16 @@ export function TestTakingPage() {
             <div className="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 p-8 text-center border-4 border-red-500">
               <div className="animate-bounce text-5xl mb-4 select-none">⚠️</div>
               <h2 className="text-xl font-bold text-red-700 mb-2">
-                Вы вышли из полноэкранного режима!
+                Толық экран режимінен шықтыңыз!
               </h2>
               <p className="text-sm text-gray-600 mb-6">
-                Во время теста необходимо оставаться в полноэкранном режиме. Пожалуйста, вернитесь.
+                Тест кезінде толық экран режимінде болу керек. Оралыңыз.
               </p>
               <button
                 onClick={handleReturnToFullscreen}
                 className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-xl text-base transition-colors cursor-pointer animate-pulse"
               >
-                Вернуться в полноэкранный режим
+                Толық экран режиміне оралу
               </button>
             </div>
           </div>

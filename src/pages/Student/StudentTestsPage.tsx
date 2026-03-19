@@ -39,8 +39,8 @@ export function StudentTestsPage() {
   if (!user?.classId) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Мои тесты</h1>
-        <p className="text-gray-500">Вы не прикреплены к классу. Обратитесь к администратору.</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Менің тесттерім</h1>
+        <p className="text-gray-500">Сіз сыныпқа тіркелмегенсіз. Әкімшіге хабарласыңыз.</p>
       </div>
     )
   }
@@ -50,9 +50,9 @@ export function StudentTestsPage() {
   if (error) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Мои тесты</h1>
-        <p className="text-red-600 mb-4">Ошибка загрузки тестов: {error}</p>
-        <Button onClick={refetch}>Попробовать снова</Button>
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Менің тесттерім</h1>
+        <p className="text-red-600 mb-4">Тесттерді жүктеу қатесі: {error}</p>
+        <Button onClick={refetch}>Қайта көру</Button>
       </div>
     )
   }
@@ -60,15 +60,15 @@ export function StudentTestsPage() {
   if (testsWithStatus.length === 0) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Мои тесты</h1>
-        <p className="text-gray-500">Тестов пока нет. Ожидайте назначения.</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Менің тесттерім</h1>
+        <p className="text-gray-500">Тесттер әлі жоқ. Тағайындалуын күтіңіз.</p>
       </div>
     )
   }
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Мои тесты</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Менің тесттерім</h1>
       <div className="flex flex-col gap-3">
         {testsWithStatus.map(({ test, result }) => {
           const status = !result
@@ -83,14 +83,14 @@ export function StudentTestsPage() {
                 <div>
                   <h3 className="font-medium text-gray-900">{test.title.replace(/ - Вариант \d+$/, '')}</h3>
                   <p className="text-sm text-gray-500 mt-1">
-                    {test.subject} &middot; {test.timeLimit} мин &middot; {test.questionCount} вопросов
+                    {test.subject} &middot; {test.timeLimit} мин &middot; {test.questionCount} сұрақ
                   </p>
                   <div className="mt-2">
-                    {status === 'not_started' && <Badge variant="info">Не начат</Badge>}
-                    {status === 'in_progress' && <Badge variant="warning">В процессе</Badge>}
+                    {status === 'not_started' && <Badge variant="info">Басталмаған</Badge>}
+                    {status === 'in_progress' && <Badge variant="warning">Орындалуда</Badge>}
                     {status === 'completed' && (
                       <Badge variant="success">
-                        Завершён ({result!.score}%)
+                        Аяқталды ({result!.score}%)
                       </Badge>
                     )}
                   </div>
@@ -98,12 +98,12 @@ export function StudentTestsPage() {
                 <div>
                   {status === 'not_started' && (
                     <Link to={`/student/tests/${test.id}/take`}>
-                      <Button>Начать</Button>
+                      <Button>Бастау</Button>
                     </Link>
                   )}
                   {status === 'in_progress' && (
                     <Link to={`/student/tests/${test.id}/take`} state={{ resume: true }}>
-                      <Button variant="secondary">Продолжить</Button>
+                      <Button variant="secondary">Жалғастыру</Button>
                     </Link>
                   )}
                   {status === 'completed' && (

@@ -30,7 +30,7 @@ export function TestViewPage({ backTo, backLabel }: TestViewPageProps) {
   )
 
   if (loadingTest || loadingQuestions) return <LoadingSpinner />
-  if (!test) return <p className="text-gray-500">Тест не найден</p>
+  if (!test) return <p className="text-gray-500">Тест табылмады</p>
 
   const bankCount = questions?.length ?? 0
   const shareUrl = `${window.location.origin}/open-test/${testId}`
@@ -40,9 +40,9 @@ export function TestViewPage({ backTo, backLabel }: TestViewPageProps) {
     try {
       await openTestAccess(testId!)
       setRefreshKey((k) => k + 1)
-      showSuccess('Доступ открыт')
+      showSuccess('Қол жеткізу ашылды')
     } catch {
-      showError('Ошибка при открытии доступа')
+      showError('Қол жеткізуді ашу қатесі')
     } finally {
       setLoadingAccess(false)
     }
@@ -53,9 +53,9 @@ export function TestViewPage({ backTo, backLabel }: TestViewPageProps) {
     try {
       await closeTestAccess(testId!)
       setRefreshKey((k) => k + 1)
-      showSuccess('Доступ закрыт')
+      showSuccess('Қол жеткізу жабылды')
     } catch {
-      showError('Ошибка при закрытии доступа')
+      showError('Қол жеткізуді жабу қатесі')
     } finally {
       setLoadingAccess(false)
     }
@@ -76,11 +76,11 @@ export function TestViewPage({ backTo, backLabel }: TestViewPageProps) {
         </Link>
         <h1 className="text-2xl font-bold text-gray-900 mt-2">{test.title}</h1>
         <p className="text-sm text-gray-500">
-          {test.subject} &middot; {test.timeLimit} мин &middot; {test.questionCount} вопросов для ученика
+          {test.subject} &middot; {test.timeLimit} мин &middot; оқушыға {test.questionCount} сұрақ
         </p>
         <div className="mt-2">
           <Badge variant={test.published ? 'success' : 'warning'}>
-            {test.published ? 'Опубликован' : 'Черновик'}
+            {test.published ? 'Жарияланған' : 'Жоба'}
           </Badge>
         </div>
       </div>
@@ -94,18 +94,18 @@ export function TestViewPage({ backTo, backLabel }: TestViewPageProps) {
               isLoading={loadingAccess}
               onClick={handleOpenAccess}
             >
-              Открыть доступ к ответам
+              Жауаптарға қол жеткізуді ашу
             </Button>
           ) : (
             <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3">
-              <p className="text-sm font-medium text-green-800 mb-1">Доступ открыт — ссылка для просмотра теста</p>
+              <p className="text-sm font-medium text-green-800 mb-1">Қол жеткізу ашылды — тестті қарауға арналған сілтеме</p>
               <p className="text-sm text-green-700 break-all mb-2">{shareUrl}</p>
               <div className="flex gap-2">
                 <Button variant="secondary" onClick={handleCopy}>
-                  {copied ? 'Скопировано!' : 'Скопировать ссылку'}
+                  {copied ? 'Көшірілді!' : 'Сілтемені көшіру'}
                 </Button>
                 <Button variant="danger" isLoading={loadingAccess} onClick={handleCloseAccess}>
-                  Отменить доступ
+                  Қол жеткізуді жабу
                 </Button>
               </div>
             </div>
@@ -115,11 +115,11 @@ export function TestViewPage({ backTo, backLabel }: TestViewPageProps) {
 
       {/* Bank counter */}
       <div className="bg-blue-50 rounded-lg px-4 py-3 mb-4 text-sm text-blue-700">
-        В банке: <strong>{bankCount}</strong> вопросов, ученик получит: <strong>{test.questionCount}</strong>
+        Банкте: <strong>{bankCount}</strong> сұрақ, оқушы алады: <strong>{test.questionCount}</strong>
       </div>
 
       {/* Questions list (read-only) */}
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Банк вопросов</h2>
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">Сұрақтар банкі</h2>
 
       {questions && questions.length > 0 ? (
         <div className="flex flex-col gap-3">
@@ -147,7 +147,7 @@ export function TestViewPage({ backTo, backLabel }: TestViewPageProps) {
           ))}
         </div>
       ) : (
-        <p className="text-gray-500 text-center py-8">Вопросов пока нет.</p>
+        <p className="text-gray-500 text-center py-8">Сұрақтар әлі жоқ.</p>
       )}
     </div>
   )

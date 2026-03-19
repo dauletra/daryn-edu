@@ -82,18 +82,18 @@ export function TestResultsPage() {
     if (!confirmReset || !testId) return
     try {
       await resetStudentTestAccess(confirmReset.studentId, testId)
-      showSuccess(`Доступ к тесту для ${confirmReset.studentName} сброшен`)
+      showSuccess(`${confirmReset.studentName} үшін тестке қол жеткізу қайта орнатылды`)
       setConfirmReset(null)
       refetchResults()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка сброса')
+      showError(err instanceof Error ? err.message : 'Қайта орнату қатесі')
     }
   }
 
   const handleMarkAbsence = async () => {
     if (!absenceModal || !testId || !user) return
     if (!absenceReason.trim()) {
-      showError('Укажите причину отсутствия')
+      showError('Себебін көрсетіңіз')
       return
     }
     try {
@@ -105,22 +105,22 @@ export function TestResultsPage() {
         reason: absenceReason.trim(),
         markedBy: user.uid,
       })
-      showSuccess(`Отсутствие ${absenceModal.studentName} отмечено`)
+      showSuccess(`${absenceModal.studentName} болмағаны белгіленді`)
       setAbsenceModal(null)
       setAbsenceReason('')
       refetchAbsences()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка')
+      showError(err instanceof Error ? err.message : 'Қате')
     }
   }
 
   if (loadingTest || loadingResults || loadingStudents) return <LoadingSpinner />
-  if (!test) return <p className="text-gray-500">Тест не найден</p>
+  if (!test) return <p className="text-gray-500">Тест табылмады</p>
 
   return (
     <div>
       <Link to="/moderator/tests" className="text-sm text-blue-600 hover:text-blue-800">
-        &larr; Назад к тестам
+        &larr; Тесттерге оралу
       </Link>
       <h1 className="text-2xl font-bold text-gray-900 mt-2 mb-2">{test.title}</h1>
       <p className="text-sm text-gray-500 mb-6">{test.subject}</p>
@@ -128,7 +128,7 @@ export function TestResultsPage() {
       {/* Filters */}
       <div className="flex items-center gap-4 mb-6">
         <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-600">Год:</label>
+          <label className="text-sm text-gray-600">Жыл:</label>
           <select
             value={filterYear}
             onChange={(e) => setFilterYear(Number(e.target.value))}
@@ -140,13 +140,13 @@ export function TestResultsPage() {
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-600">Четверть:</label>
+          <label className="text-sm text-gray-600">Тоқсан:</label>
           <select
             value={filterQuarter}
             onChange={(e) => setFilterQuarter(e.target.value)}
             className="px-2 py-1 border border-gray-300 rounded-lg text-sm"
           >
-            <option value="">Все</option>
+            <option value="">Барлығы</option>
             {QUARTERS.map((q) => (
               <option key={q} value={q}>{q}</option>
             ))}
@@ -159,19 +159,19 @@ export function TestResultsPage() {
         <div className="grid grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-lg p-3 shadow-sm">
             <div className="text-2xl font-bold text-gray-900">{stats.count}</div>
-            <div className="text-xs text-gray-500">Сдали</div>
+            <div className="text-xs text-gray-500">Тапсырды</div>
           </div>
           <div className="bg-white rounded-lg p-3 shadow-sm">
             <div className="text-2xl font-bold text-blue-600">{stats.avg}%</div>
-            <div className="text-xs text-gray-500">Средний балл</div>
+            <div className="text-xs text-gray-500">Орташа балл</div>
           </div>
           <div className="bg-white rounded-lg p-3 shadow-sm">
             <div className="text-2xl font-bold text-green-600">{stats.max}%</div>
-            <div className="text-xs text-gray-500">Лучший</div>
+            <div className="text-xs text-gray-500">Үздік</div>
           </div>
           <div className="bg-white rounded-lg p-3 shadow-sm">
             <div className="text-2xl font-bold text-red-600">{stats.min}%</div>
-            <div className="text-xs text-gray-500">Худший</div>
+            <div className="text-xs text-gray-500">Ең төмен</div>
           </div>
         </div>
       )}
@@ -179,13 +179,13 @@ export function TestResultsPage() {
       {/* Absences */}
       {absences && absences.length > 0 && (
         <div className="mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Отсутствующие</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Болмағандар</h2>
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="text-left px-4 py-2 text-sm font-medium text-gray-500">Ученик</th>
-                  <th className="text-left px-4 py-2 text-sm font-medium text-gray-500">Причина</th>
+                  <th className="text-left px-4 py-2 text-sm font-medium text-gray-500">Оқушы</th>
+                  <th className="text-left px-4 py-2 text-sm font-medium text-gray-500">Себебі</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -207,11 +207,11 @@ export function TestResultsPage() {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Ученик</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Четверть</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Результат</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Ошибки</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Действия</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Оқушы</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Тоқсан</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Нәтиже</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Қателер</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Әрекеттер</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -227,24 +227,24 @@ export function TestResultsPage() {
                         <span className="text-sm text-gray-500">{result.quarter}</span>
                         <span className="text-sm">
                           <Badge variant={getScoreVariant(result.score)}>
-                            {result.correctCount} из {result.questionIds.length} &middot; {result.score}%
+                            {result.correctCount} / {result.questionIds.length} &middot; {result.score}%
                           </Badge>
                         </span>
                         <span className="text-sm text-gray-500">
-                          {result.wrongQuestionIds.length} ошибок
+                          {result.wrongQuestionIds.length} қате
                         </span>
                         <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => setConfirmReset({ studentId: result.studentId, studentName: getStudentName(result.studentId) })}
                             className="text-xs text-orange-600 hover:text-orange-800 cursor-pointer"
                           >
-                            Сбросить
+                            Қайта орнату
                           </button>
                           <button
                             onClick={() => setAbsenceModal({ studentId: result.studentId, studentName: getStudentName(result.studentId) })}
                             className="text-xs text-gray-600 hover:text-gray-800 cursor-pointer ml-2"
                           >
-                            Отсутствие
+                            Болмаған
                           </button>
                         </div>
                       </div>
@@ -283,13 +283,13 @@ export function TestResultsPage() {
                                 <p className="font-medium text-gray-900 mb-1"><MathText text={question.text} /></p>
                                 <div className="flex gap-4 flex-wrap">
                                   <span className={isCorrect ? 'text-green-700' : 'text-red-700'}>
-                                    Ответ ученика: {selectedIdx >= 0
+                                    Оқушы жауабы: {selectedIdx >= 0
                                       ? <>{String.fromCharCode(65 + selectedIdx)}. <MathText text={shuffledQ?.options[selectedIdx] ?? question.options[selectedIdx]} /></>
-                                      : 'Без ответа'}
+                                      : 'Жауапсыз'}
                                   </span>
                                   {!isCorrect && (
                                     <span className="text-green-700">
-                                      Правильный: {String.fromCharCode(65 + safeCorrectPos)}. <MathText text={shuffledQ?.options[safeCorrectPos] ?? question.options[question.correctIndex]} />
+                                      Дұрыс: {String.fromCharCode(65 + safeCorrectPos)}. <MathText text={shuffledQ?.options[safeCorrectPos] ?? question.options[question.correctIndex]} />
                                     </span>
                                   )}
                                 </div>
@@ -306,39 +306,39 @@ export function TestResultsPage() {
           </table>
         </div>
       ) : (
-        <p className="text-gray-500 text-center py-8">Никто ещё не сдал этот тест</p>
+        <p className="text-gray-500 text-center py-8">Бұл тестті әлі ешкім тапсырмады</p>
       )}
 
       {/* Reset confirmation modal */}
-      <Modal isOpen={!!confirmReset} onClose={() => setConfirmReset(null)} title="Сбросить доступ к тесту?">
+      <Modal isOpen={!!confirmReset} onClose={() => setConfirmReset(null)} title="Тестке қол жеткізуді қайта орнату керек пе?">
         <p className="text-sm text-gray-600 mb-4">
-          Результат теста для <strong>{confirmReset?.studentName}</strong> будет удалён и ученик сможет пройти тест заново.
+          <strong>{confirmReset?.studentName}</strong> үшін тест нәтижесі жойылады және оқушы тестті қайта өте алады.
         </p>
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setConfirmReset(null)}>Отмена</Button>
-          <Button variant="danger" onClick={handleResetAccess}>Сбросить</Button>
+          <Button variant="secondary" onClick={() => setConfirmReset(null)}>Болдырмау</Button>
+          <Button variant="danger" onClick={handleResetAccess}>Қайта орнату</Button>
         </div>
       </Modal>
 
       {/* Absence modal */}
-      <Modal isOpen={!!absenceModal} onClose={() => { setAbsenceModal(null); setAbsenceReason('') }} title="Отметить отсутствие">
+      <Modal isOpen={!!absenceModal} onClose={() => { setAbsenceModal(null); setAbsenceReason('') }} title="Болмағанды белгілеу">
         <div className="flex flex-col gap-4">
           <p className="text-sm text-gray-600">
-            Ученик: <strong>{absenceModal?.studentName}</strong>
+            Оқушы: <strong>{absenceModal?.studentName}</strong>
           </p>
           <div>
-            <label className="text-sm font-medium text-gray-700">Причина</label>
+            <label className="text-sm font-medium text-gray-700">Себебі</label>
             <textarea
               value={absenceReason}
               onChange={(e) => setAbsenceReason(e.target.value)}
               className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               rows={3}
-              placeholder="Укажите причину отсутствия..."
+              placeholder="Болмау себебін көрсетіңіз..."
             />
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => { setAbsenceModal(null); setAbsenceReason('') }}>Отмена</Button>
-            <Button onClick={handleMarkAbsence}>Отметить</Button>
+            <Button variant="secondary" onClick={() => { setAbsenceModal(null); setAbsenceReason('') }}>Болдырмау</Button>
+            <Button onClick={handleMarkAbsence}>Белгілеу</Button>
           </div>
         </div>
       </Modal>

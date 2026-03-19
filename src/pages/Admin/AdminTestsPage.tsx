@@ -42,10 +42,10 @@ export function AdminTestsPage() {
     setSubmitting(true)
     try {
       await updateTest(test.id, { published: !test.published })
-      showSuccess(test.published ? 'Тест снят с публикации' : 'Тест опубликован')
+      showSuccess(test.published ? 'Тест жарияланымнан алынды' : 'Тест жарияланды')
       refetch()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка')
+      showError(err instanceof Error ? err.message : 'Қате')
     } finally {
       setSubmitting(false)
     }
@@ -56,11 +56,11 @@ export function AdminTestsPage() {
     setSubmitting(true)
     try {
       await deleteTest(confirmDelete.id)
-      showSuccess('Тест удалён')
+      showSuccess('Тест жойылды')
       setConfirmDelete(null)
       refetch()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка удаления')
+      showError(err instanceof Error ? err.message : 'Жою қатесі')
     } finally {
       setSubmitting(false)
     }
@@ -69,7 +69,7 @@ export function AdminTestsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Тесты</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Тесттер</h1>
         <div className="flex items-center gap-2">
           <label className="text-sm text-gray-600">Банк:</label>
           <select
@@ -77,7 +77,7 @@ export function AdminTestsPage() {
             onChange={(e) => setFilterBankId(e.target.value)}
             className="px-2 py-1 border border-gray-300 rounded-lg text-sm"
           >
-            <option value="">Все</option>
+            <option value="">Барлығы</option>
             {testBanks?.map((b) => (
               <option key={b.id} value={b.id}>{b.name}</option>
             ))}
@@ -90,13 +90,13 @@ export function AdminTestsPage() {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Название</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Атауы</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Банк</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Предмет</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Пән</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Автор</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Вопросов</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Статус</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Действия</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Сұрақтар</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Мәртебе</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Әрекеттер</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -109,7 +109,7 @@ export function AdminTestsPage() {
                   <td className="px-4 py-3 text-sm text-gray-500">{test.questionCount}</td>
                   <td className="px-4 py-3">
                     <Badge variant={test.published ? 'success' : 'warning'}>
-                      {test.published ? 'Опубликован' : 'Черновик'}
+                      {test.published ? 'Жарияланған' : 'Жоба'}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
@@ -118,21 +118,21 @@ export function AdminTestsPage() {
                         to={`/admin/tests/${test.id}/view`}
                         className="text-sm text-blue-600 hover:text-blue-800"
                       >
-                        Просмотреть
+                        Қарау
                       </Link>
                       <button
                         onClick={() => void handlePublishToggle(test)}
                         disabled={submitting}
                         className="text-sm text-indigo-600 hover:text-indigo-800 disabled:opacity-40 cursor-pointer"
                       >
-                        {test.published ? 'Снять' : 'Опубликовать'}
+                        {test.published ? 'Алу' : 'Жариялау'}
                       </button>
                       <button
                         onClick={() => setConfirmDelete({ id: test.id, title: formatTestTitle(test) })}
                         disabled={submitting}
                         className="text-sm text-red-600 hover:text-red-800 disabled:opacity-40 cursor-pointer"
                       >
-                        Удалить
+                        Жою
                       </button>
                     </div>
                   </td>
@@ -142,16 +142,16 @@ export function AdminTestsPage() {
           </table>
         </div>
       ) : (
-        <p className="text-gray-500">Тестов пока нет</p>
+        <p className="text-gray-500">Тесттер әлі жоқ</p>
       )}
 
-      <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Удалить тест?">
+      <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Тестті жою керек пе?">
         <p className="text-sm text-gray-600 mb-4">
-          Тест <strong>{confirmDelete?.title}</strong> будет удалён вместе со всеми вопросами. Это действие нельзя отменить.
+          <strong>{confirmDelete?.title}</strong> тесті барлық сұрақтарымен жойылады. Бұл әрекетті болдырмауға болмайды.
         </p>
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Отмена</Button>
-          <Button variant="danger" isLoading={submitting} onClick={() => void handleDeleteConfirm()}>Удалить</Button>
+          <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Болдырмау</Button>
+          <Button variant="danger" isLoading={submitting} onClick={() => void handleDeleteConfirm()}>Жою</Button>
         </div>
       </Modal>
     </div>

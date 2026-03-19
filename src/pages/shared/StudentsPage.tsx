@@ -66,7 +66,7 @@ export function StudentsPage() {
       if (last && last.classId === cid) {
         last.students.push(student)
       } else {
-        const className = cid ? (classes?.find((c) => c.id === cid)?.name ?? '—') : 'Без класса'
+        const className = cid ? (classes?.find((c) => c.id === cid)?.name ?? '—') : 'Сыныпсыз'
         groups.push({ classId: cid, className, students: [student] })
       }
     }
@@ -126,13 +126,13 @@ export function StudentsPage() {
         }
       }
 
-      showSuccess('Ученик обновлён')
+      showSuccess('Оқушы жаңартылды')
       setEditModalOpen(false)
       setEditingStudent(null)
       resetForm()
       refetch()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка обновления')
+      showError(err instanceof Error ? err.message : 'Жаңарту қатесі')
     } finally {
       setSubmitting(false)
     }
@@ -143,12 +143,12 @@ export function StudentsPage() {
     setDeleting(true)
     try {
       await deleteStudents(Array.from(selectedIds))
-      showSuccess(`Удалено учеников: ${selectedIds.size}`)
+      showSuccess(`${selectedIds.size} оқушы жойылды`)
       setSelectedIds(new Set())
       setConfirmDeleteOpen(false)
       refetch()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка удаления')
+      showError(err instanceof Error ? err.message : 'Жою қатесі')
     } finally {
       setDeleting(false)
     }
@@ -173,7 +173,7 @@ export function StudentsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
-          Ученики <Badge variant="info">{students?.length ?? 0}</Badge>
+          Оқушылар <Badge variant="info">{students?.length ?? 0}</Badge>
         </h1>
       </div>
 
@@ -181,14 +181,14 @@ export function StudentsPage() {
       <div className="flex items-center gap-3 mb-4">
         <input
           type="text"
-          placeholder="Поиск по имени или email..."
+          placeholder="Аты-жөні немесе email бойынша іздеу..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         {selectedIds.size > 0 && (
           <Button variant="danger" onClick={() => setConfirmDeleteOpen(true)}>
-            Удалить выбранных ({selectedIds.size})
+            Таңдалғандарды жою ({selectedIds.size})
           </Button>
         )}
       </div>
@@ -206,10 +206,10 @@ export function StudentsPage() {
                     className="rounded border-gray-300 cursor-pointer"
                   />
                 </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Имя</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Аты-жөні</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Email</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Пароль</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Класс</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Құпиясөз</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Сынып</th>
                 <th className="text-right px-4 py-3 text-sm font-medium text-gray-500 w-28"></th>
               </tr>
             </thead>
@@ -220,7 +220,7 @@ export function StudentsPage() {
                   <tr>
                     <td colSpan={6} className="px-4 py-1.5 bg-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide border-t border-gray-200">
                       {group.className}
-                      <span className="ml-2 font-normal normal-case text-gray-400">{group.students.length} уч.</span>
+                      <span className="ml-2 font-normal normal-case text-gray-400">{group.students.length} оқ.</span>
                     </td>
                   </tr>
                   {/* Student rows */}
@@ -246,7 +246,7 @@ export function StudentsPage() {
                           onClick={() => openEditModal(student)}
                           className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer"
                         >
-                          Редактировать
+                          Өңдеу
                         </button>
                         <button
                           onClick={() => {
@@ -255,7 +255,7 @@ export function StudentsPage() {
                           }}
                           className="text-sm text-red-600 hover:text-red-800 cursor-pointer"
                         >
-                          Удалить
+                          Жою
                         </button>
                       </td>
                     </tr>
@@ -267,22 +267,22 @@ export function StudentsPage() {
         </div>
       ) : (
         <p className="text-gray-500 text-center py-8">
-          {search ? 'Ничего не найдено' : 'Учеников пока нет'}
+          {search ? 'Ештеңе табылмады' : 'Оқушылар әлі жоқ'}
         </p>
       )}
 
       {/* Edit Student Modal */}
-      <Modal isOpen={editModalOpen} onClose={() => { setEditModalOpen(false); resetForm() }} title="Редактировать ученика">
+      <Modal isOpen={editModalOpen} onClose={() => { setEditModalOpen(false); resetForm() }} title="Оқушыны өңдеу">
         <form onSubmit={handleEdit} className="flex flex-col gap-4">
-          <Input label="Имя" value={name} onChange={(e) => setName(e.target.value)} />
+          <Input label="Аты-жөні" value={name} onChange={(e) => setName(e.target.value)} />
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Класс</label>
+            <label className="text-sm font-medium text-gray-700">Сынып</label>
             <select
               value={classId}
               onChange={(e) => setClassId(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Без класса</option>
+              <option value="">Сыныпсыз</option>
               {classes?.map((cls) => (
                 <option key={cls.id} value={cls.id}>{cls.name}</option>
               ))}
@@ -290,9 +290,9 @@ export function StudentsPage() {
           </div>
           <div className="flex justify-end gap-2 mt-2">
             <Button variant="secondary" type="button" onClick={() => { setEditModalOpen(false); resetForm() }}>
-              Отмена
+              Болдырмау
             </Button>
-            <Button type="submit" isLoading={submitting}>Сохранить</Button>
+            <Button type="submit" isLoading={submitting}>Сақтау</Button>
           </div>
         </form>
       </Modal>
@@ -301,13 +301,13 @@ export function StudentsPage() {
       <Modal
         isOpen={confirmDeleteOpen}
         onClose={() => { setConfirmDeleteOpen(false) }}
-        title="Удалить учеников?"
+        title="Оқушыларды жою керек пе?"
       >
         <div className="flex flex-col gap-4">
           <p className="text-sm text-gray-600">
             {selectedIds.size === 1
-              ? `Ученик будет полностью удалён вместе с результатами тестов.`
-              : `Будет удалено учеников: ${selectedIds.size}. Все их результаты тестов тоже будут удалены.`}
+              ? `Оқушы тест нәтижелерімен бірге толығымен жойылады.`
+              : `${selectedIds.size} оқушы жойылады. Олардың барлық тест нәтижелері де жойылады.`}
           </p>
           {selectedIds.size <= 10 && (
             <div className="bg-red-50 rounded-lg p-3">
@@ -320,9 +320,9 @@ export function StudentsPage() {
             </div>
           )}
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setConfirmDeleteOpen(false)}>Отмена</Button>
+            <Button variant="secondary" onClick={() => setConfirmDeleteOpen(false)}>Болдырмау</Button>
             <Button variant="danger" isLoading={deleting} onClick={handleBulkDelete}>
-              Удалить {selectedIds.size > 1 ? `(${selectedIds.size})` : ''}
+              Жою {selectedIds.size > 1 ? `(${selectedIds.size})` : ''}
             </Button>
           </div>
         </div>

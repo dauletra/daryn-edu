@@ -85,18 +85,18 @@ export function TestEditPage() {
         questionCount: Number(editQuestionCount),
         title,
       })
-      showSuccess('Тест обновлён')
+      showSuccess('Тест жаңартылды')
       setEditMetaOpen(false)
       refetchTest()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка')
+      showError(err instanceof Error ? err.message : 'Қате')
     }
   }
 
   const handleAddQuestion = async (data: { text: string; options: string[]; correctIndex: number }) => {
     if (!testId) return
     await addQuestion(testId, data)
-    showSuccess('Вопрос добавлен')
+    showSuccess('Сұрақ қосылды')
     setShowAddForm(false)
     refetchQuestions()
   }
@@ -107,7 +107,7 @@ export function TestEditPage() {
   ) => {
     if (!testId) return
     await updateQuestion(testId, questionId, data)
-    showSuccess('Вопрос обновлён')
+    showSuccess('Сұрақ жаңартылды')
     setEditingQuestionId(null)
     refetchQuestions()
   }
@@ -117,21 +117,21 @@ export function TestEditPage() {
     try {
       const activeResults = await getActiveResultsForTest(testId)
       if (activeResults.length > 0) {
-        showError('Есть ученики, проходящие тест. Удаление невозможно')
+        showError('Тестті өтіп жатқан оқушылар бар. Жою мүмкін емес')
         setDeleteConfirmId(null)
         return
       }
       await deleteQuestion(testId, deleteConfirmId)
-      showSuccess('Вопрос удалён')
+      showSuccess('Сұрақ жойылды')
       setDeleteConfirmId(null)
       refetchQuestions()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка удаления')
+      showError(err instanceof Error ? err.message : 'Жою қатесі')
     }
   }
 
   if (loadingTest || loadingQuestions) return <LoadingSpinner />
-  if (!test) return <p className="text-gray-500">Тест не найден</p>
+  if (!test) return <p className="text-gray-500">Тест табылмады</p>
 
   const bankCount = questions?.length ?? 0
 
@@ -141,24 +141,24 @@ export function TestEditPage() {
       <div className="flex items-start justify-between mb-6">
         <div>
           <Link to="/moderator/tests" className="text-sm text-blue-600 hover:text-blue-800">
-            &larr; Назад к тестам
+            &larr; Тесттерге оралу
           </Link>
           <h1 className="text-2xl font-bold text-gray-900 mt-2">{test.title}</h1>
           <p className="text-sm text-gray-500">
-            {test.subject} &middot; {test.timeLimit} мин &middot; {test.questionCount} вопросов для ученика
+            {test.subject} &middot; {test.timeLimit} мин &middot; оқушыға {test.questionCount} сұрақ
           </p>
         </div>
         <Button variant="secondary" onClick={openEditMeta}>
-          Настройки теста
+          Тест параметрлері
         </Button>
       </div>
 
       {/* Bank counter */}
       <div className="bg-blue-50 rounded-lg px-4 py-3 mb-4 text-sm text-blue-700">
-        В банке: <strong>{bankCount}</strong> вопросов, ученик получит: <strong>{test.questionCount}</strong>
+        Банкте: <strong>{bankCount}</strong> сұрақ, оқушы алады: <strong>{test.questionCount}</strong>
         {bankCount < test.questionCount && (
           <span className="text-red-600 ml-2">
-            (недостаточно вопросов для публикации)
+            (жариялау үшін сұрақтар жеткіліксіз)
           </span>
         )}
       </div>
@@ -169,7 +169,7 @@ export function TestEditPage() {
           variant={showAIGenerator ? 'secondary' : 'primary'}
           onClick={() => setShowAIGenerator(!showAIGenerator)}
         >
-          {showAIGenerator ? 'Скрыть AI генератор' : 'Сгенерировать вопросы с помощью AI'}
+          {showAIGenerator ? 'AI генераторды жасыру' : 'AI арқылы сұрақтар жасау'}
         </Button>
       </div>
 
@@ -187,9 +187,9 @@ export function TestEditPage() {
 
       {/* Questions list */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Банк вопросов</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Сұрақтар банкі</h2>
         {!showAddForm && (
-          <Button onClick={() => setShowAddForm(true)}>Добавить вопрос вручную</Button>
+          <Button onClick={() => setShowAddForm(true)}>Қолмен сұрақ қосу</Button>
         )}
       </div>
 
@@ -236,13 +236,13 @@ export function TestEditPage() {
                       onClick={() => setEditingQuestionId(q.id)}
                       className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer"
                     >
-                      Редактировать
+                      Өңдеу
                     </button>
                     <button
                       onClick={() => setDeleteConfirmId(q.id)}
                       className="text-sm text-red-600 hover:text-red-800 cursor-pointer"
                     >
-                      Удалить
+                      Жою
                     </button>
                   </div>
                 </div>
@@ -251,29 +251,29 @@ export function TestEditPage() {
           ))}
         </div>
       ) : (
-        !showAddForm && <p className="text-gray-500 text-center py-8">Вопросов пока нет. Добавьте первый вопрос.</p>
+        !showAddForm && <p className="text-gray-500 text-center py-8">Сұрақтар әлі жоқ. Алғашқы сұрақты қосыңыз.</p>
       )}
 
       {/* Delete Confirm Modal */}
-      <Modal isOpen={!!deleteConfirmId} onClose={() => setDeleteConfirmId(null)} title="Удалить вопрос?">
-        <p className="text-sm text-gray-600 mb-6">Вопрос будет удалён без возможности восстановления.</p>
+      <Modal isOpen={!!deleteConfirmId} onClose={() => setDeleteConfirmId(null)} title="Сұрақты жою керек пе?">
+        <p className="text-sm text-gray-600 mb-6">Сұрақ қалпына келтіру мүмкіндігінсіз жойылады.</p>
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setDeleteConfirmId(null)}>Отмена</Button>
-          <Button variant="danger" onClick={handleDeleteQuestion}>Удалить</Button>
+          <Button variant="secondary" onClick={() => setDeleteConfirmId(null)}>Болдырмау</Button>
+          <Button variant="danger" onClick={handleDeleteQuestion}>Жою</Button>
         </div>
       </Modal>
 
       {/* Edit Meta Modal */}
-      <Modal isOpen={editMetaOpen} onClose={() => setEditMetaOpen(false)} title="Настройки теста">
+      <Modal isOpen={editMetaOpen} onClose={() => setEditMetaOpen(false)} title="Тест параметрлері">
         <form onSubmit={handleSaveMeta} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Предмет</label>
+            <label className="text-sm font-medium text-gray-700">Пән</label>
             <select
               value={editSubjectId}
               onChange={(e) => setEditSubjectId(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Выберите предмет</option>
+              <option value="">Пәнді таңдаңыз</option>
               {subjects?.map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
@@ -281,21 +281,21 @@ export function TestEditPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">Класс</label>
+              <label className="text-sm font-medium text-gray-700">Сынып</label>
               <select
                 value={editClassLevel}
                 onChange={(e) => setEditClassLevel(Number(e.target.value) as ClassLevel)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {CLASS_LEVELS.map((l) => (
-                  <option key={l} value={l}>{l} класс</option>
+                  <option key={l} value={l}>{l} сынып</option>
                 ))}
               </select>
             </div>
-            <Input label="Номер варианта" type="number" value={editVariantNumber} onChange={(e) => setEditVariantNumber(e.target.value)} min="1" />
+            <Input label="Нұсқа нөмірі" type="number" value={editVariantNumber} onChange={(e) => setEditVariantNumber(e.target.value)} min="1" />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Язык</label>
+            <label className="text-sm font-medium text-gray-700">Тіл</label>
             <select
               value={editLanguage}
               onChange={(e) => setEditLanguage(e.target.value)}
@@ -307,12 +307,12 @@ export function TestEditPage() {
             </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Лимит времени (мин)" type="number" value={editTimeLimit} onChange={(e) => setEditTimeLimit(e.target.value)} min="1" />
-            <Input label="Вопросов для ученика" type="number" value={editQuestionCount} onChange={(e) => setEditQuestionCount(e.target.value)} min="1" />
+            <Input label="Уақыт шегі (мин)" type="number" value={editTimeLimit} onChange={(e) => setEditTimeLimit(e.target.value)} min="1" />
+            <Input label="Оқушыға арналған сұрақтар саны" type="number" value={editQuestionCount} onChange={(e) => setEditQuestionCount(e.target.value)} min="1" />
           </div>
           <div className="flex justify-end gap-2 mt-2">
-            <Button variant="secondary" type="button" onClick={() => setEditMetaOpen(false)}>Отмена</Button>
-            <Button type="submit">Сохранить</Button>
+            <Button variant="secondary" type="button" onClick={() => setEditMetaOpen(false)}>Болдырмау</Button>
+            <Button type="submit">Сақтау</Button>
           </div>
         </form>
       </Modal>

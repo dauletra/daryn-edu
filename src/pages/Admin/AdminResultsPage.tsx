@@ -52,11 +52,11 @@ export function AdminResultsPage() {
     setResetting(true)
     try {
       await resetStudentTestAccess(confirmReset.studentId, confirmReset.testId)
-      showSuccess(`Доступ к тесту для ${confirmReset.studentName} сброшен`)
+      showSuccess(`${confirmReset.studentName} үшін тестке қол жеткізу қалпына келтірілді`)
       setConfirmReset(null)
       refetchResults()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка сброса')
+      showError(err instanceof Error ? err.message : 'Қалпына келтіру қатесі')
     } finally {
       setResetting(false)
     }
@@ -94,20 +94,20 @@ export function AdminResultsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Результаты</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Нәтижелер</h1>
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-4 mb-6">
         {/* Class selector */}
         {selectedBankId && (
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">Класс:</label>
+            <label className="text-sm text-gray-600">Сынып:</label>
             <select
               value={filterClassId}
               onChange={(e) => handleClassChange(e.target.value)}
               className="px-2 py-1 border border-gray-300 rounded-lg text-sm"
             >
-              <option value="">Выберите класс</option>
+              <option value="">Сыныпты таңдаңыз</option>
               {classes?.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
@@ -118,13 +118,13 @@ export function AdminResultsPage() {
         {/* Subject selector */}
         {filterClassId && activeSubjects.length > 0 && (
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">Предмет:</label>
+            <label className="text-sm text-gray-600">Пән:</label>
             <select
               value={filterSubjectId}
               onChange={(e) => setFilterSubjectId(e.target.value)}
               className="px-2 py-1 border border-gray-300 rounded-lg text-sm"
             >
-              <option value="">Все предметы</option>
+              <option value="">Барлық пәндер</option>
               {activeSubjects.map((s) => (
                 <option key={s.subjectId} value={s.subjectId}>{s.subjectName}</option>
               ))}
@@ -148,18 +148,18 @@ export function AdminResultsPage() {
             })()}
             className="ml-auto px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
           >
-            Экспорт в Excel
+            Excel-ге экспорт
           </button>
         )}
       </div>
 
       {/* Content area */}
       {!selectedBankId ? (
-        <p className="text-gray-500 text-center py-12">Выберите банк тестов вверху страницы</p>
+        <p className="text-gray-500 text-center py-12">Беттің жоғарғы жағынан тест банкін таңдаңыз</p>
       ) : loadingResults ? (
         <LoadingSpinner />
       ) : !filterClassId ? (
-        <p className="text-gray-500 text-center py-12">Выберите класс для просмотра результатов</p>
+        <p className="text-gray-500 text-center py-12">Нәтижелерді қарау үшін сыныпты таңдаңыз</p>
       ) : filterSubjectId ? (
         <SubjectView
           bankResults={classResults ?? []}
@@ -179,13 +179,13 @@ export function AdminResultsPage() {
         />
       )}
 
-      <Modal isOpen={!!confirmReset} onClose={() => setConfirmReset(null)} title="Сбросить результат?">
+      <Modal isOpen={!!confirmReset} onClose={() => setConfirmReset(null)} title="Нәтижені қалпына келтіру керек пе?">
         <p className="text-sm text-gray-600 mb-4">
-          Результат ученика <strong>{confirmReset?.studentName}</strong> будет удалён — ученик сможет пройти тест заново.
+          <strong>{confirmReset?.studentName}</strong> оқушысының нәтижесі жойылады — оқушы тестті қайта өте алады.
         </p>
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setConfirmReset(null)}>Отмена</Button>
-          <Button variant="danger" isLoading={resetting} onClick={() => void handleReset()}>Сбросить</Button>
+          <Button variant="secondary" onClick={() => setConfirmReset(null)}>Болдырмау</Button>
+          <Button variant="danger" isLoading={resetting} onClick={() => void handleReset()}>Қалпына келтіру</Button>
         </div>
       </Modal>
     </div>
@@ -240,7 +240,7 @@ function ClassView({ bankResults, activeSubjects, classStudents }: ClassViewProp
   }, [classStudents, resultMap])
 
   if (rows.length === 0) {
-    return <p className="text-gray-500 text-center py-8">Нет данных для выбранного класса</p>
+    return <p className="text-gray-500 text-center py-8">Таңдалған сынып үшін деректер жоқ</p>
   }
 
   return (
@@ -249,7 +249,7 @@ function ClassView({ bankResults, activeSubjects, classStudents }: ClassViewProp
         <thead className="bg-gray-50">
           <tr>
             <th className="text-center px-3 py-3 text-sm font-medium text-gray-500 whitespace-nowrap">#</th>
-            <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 whitespace-nowrap">Ученик</th>
+            <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 whitespace-nowrap">Оқушы</th>
             {activeSubjects.map((s) => (
               <th key={s.subjectId} className="text-center px-3 py-3 text-sm font-medium text-gray-500 whitespace-nowrap">
                 {s.subjectName}
@@ -258,7 +258,7 @@ function ClassView({ bankResults, activeSubjects, classStudents }: ClassViewProp
                 )}
               </th>
             ))}
-            <th className="text-center px-3 py-3 text-sm font-medium text-gray-500 whitespace-nowrap">Итого</th>
+            <th className="text-center px-3 py-3 text-sm font-medium text-gray-500 whitespace-nowrap">Жиыны</th>
             <th className="text-center px-3 py-3 text-sm font-medium text-gray-500 whitespace-nowrap">%</th>
           </tr>
         </thead>
@@ -287,7 +287,7 @@ function ClassView({ bankResults, activeSubjects, classStudents }: ClassViewProp
         <tfoot className="bg-gray-50 border-t-2 border-gray-200">
           <tr>
             <td />
-            <td className="px-4 py-3 text-sm font-semibold text-gray-600 whitespace-nowrap">Среднее</td>
+            <td className="px-4 py-3 text-sm font-semibold text-gray-600 whitespace-nowrap">Орташа</td>
             {activeSubjects.map((s) => {
               const scores = rows.map((r) => r.bySubject.get(s.subjectId)?.correctCount).filter((v): v is number => v !== undefined)
               const avg = scores.length > 0 ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : null
@@ -357,7 +357,7 @@ function SubjectView({ bankResults, subjectId, className, classStudents, canRese
   }, [resultMap])
 
   if (rows.length === 0) {
-    return <p className="text-gray-500 text-center py-8">Нет учеников в выбранном классе</p>
+    return <p className="text-gray-500 text-center py-8">Таңдалған сыныпта оқушылар жоқ</p>
   }
 
   return (
@@ -366,13 +366,13 @@ function SubjectView({ bankResults, subjectId, className, classStudents, canRese
         <thead className="bg-gray-50">
           <tr>
             <th className="text-center px-3 py-3 text-sm font-medium text-gray-500">#</th>
-            <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Ученик</th>
-            <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Класс</th>
+            <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Оқушы</th>
+            <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Сынып</th>
             <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">
               Балл{subjectTotal !== null && <span className="text-gray-400 font-normal"> [{subjectTotal}]</span>}
             </th>
             <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">%</th>
-            <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Оценка</th>
+            <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Баға</th>
             {(canReset || onResetRequest) && (
               <th className="text-center px-4 py-3 text-sm font-medium text-gray-500"></th>
             )}
@@ -400,7 +400,7 @@ function SubjectView({ bankResults, subjectId, className, classStudents, canRese
                       onClick={() => onResetRequest(student.uid, student.name, result.testId)}
                       className="text-xs text-orange-600 hover:text-orange-800 cursor-pointer"
                     >
-                      Сбросить
+                      Қалпына келтіру
                     </button>
                   )}
                 </td>
@@ -418,7 +418,7 @@ function SubjectView({ bankResults, subjectId, className, classStudents, canRese
             <tfoot className="bg-gray-50 border-t-2 border-gray-200">
               <tr>
                 <td />
-                <td className="px-4 py-3 text-sm font-semibold text-gray-600">Среднее</td>
+                <td className="px-4 py-3 text-sm font-semibold text-gray-600">Орташа</td>
                 <td />
                 <td className="px-4 py-3 text-sm text-center font-medium text-gray-700">
                   {(totalCorrect / withResults.length).toFixed(1)}

@@ -37,26 +37,26 @@ export function TestsPage() {
         const count = await getQuestionsCount(testId)
         const test = tests?.find((t) => t.id === testId)
         if (test && test.questionCount > count) {
-          showError(`Недостаточно вопросов в банке. В банке: ${count}, требуется: ${test.questionCount}`)
+          showError(`Банкте жеткілікті сұрақ жоқ. Банкте: ${count}, қажет: ${test.questionCount}`)
           return
         }
       }
       await updateTest(testId, { published: publish })
-      showSuccess(publish ? 'Тест опубликован' : 'Тест снят с публикации')
+      showSuccess(publish ? 'Тест жарияланды' : 'Тест жарияланымнан алынды')
       refetch()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка')
+      showError(err instanceof Error ? err.message : 'Қате')
     }
   }
 
   const handleDelete = async (testId: string) => {
     try {
       await deleteTest(testId)
-      showSuccess('Тест удалён')
+      showSuccess('Тест жойылды')
       setConfirmDelete(null)
       refetch()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка удаления')
+      showError(err instanceof Error ? err.message : 'Жою қатесі')
     }
   }
 
@@ -65,8 +65,8 @@ export function TestsPage() {
   if (banks.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">Банки тестов ещё не созданы.</p>
-        <p className="text-sm text-gray-400 mt-1">Обратитесь к администратору.</p>
+        <p className="text-gray-500">Тест банктары әлі жасалмаған.</p>
+        <p className="text-sm text-gray-400 mt-1">Әкімшіге хабарласыңыз.</p>
       </div>
     )
   }
@@ -74,10 +74,10 @@ export function TestsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Тесты</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Тесттер</h1>
         {selectedBankId && (
           <Link to={`/moderator/tests/new?bankId=${selectedBankId}`}>
-            <Button>Создать тест</Button>
+            <Button>Тест жасау</Button>
           </Link>
         )}
       </div>
@@ -87,22 +87,22 @@ export function TestsPage() {
           {selectedBank && (
             <div className="bg-white rounded-xl shadow-sm p-4 mb-6 flex items-center gap-6">
               <div>
-                <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">Банк тестов</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">Тест банкі</div>
                 <div className="font-semibold text-gray-900">{selectedBank.name}</div>
               </div>
               <div className="h-8 w-px bg-gray-200" />
               <div>
-                <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">Четверть</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">Тоқсан</div>
                 <div className="font-semibold text-gray-900">{selectedBank.quarter}</div>
               </div>
               <div className="h-8 w-px bg-gray-200" />
               <div>
-                <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">Учебный год</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">Оқу жылы</div>
                 <div className="font-semibold text-gray-900">{selectedBank.academicYear}-{selectedBank.academicYear + 1}</div>
               </div>
               <div className="h-8 w-px bg-gray-200" />
               <div>
-                <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">Всего тестов</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">Барлық тесттер</div>
                 <div className="font-semibold text-gray-900">{tests?.length ?? 0}</div>
               </div>
             </div>
@@ -114,10 +114,10 @@ export function TestsPage() {
             <div className="flex flex-col gap-8">
               <section>
                 <h2 className="text-base font-semibold text-gray-700 mb-3">
-                  Мои тесты <span className="text-gray-400 font-normal">({myTests.length})</span>
+                  Менің тесттерім <span className="text-gray-400 font-normal">({myTests.length})</span>
                 </h2>
                 {myTests.length === 0 ? (
-                  <p className="text-gray-400 text-sm">У вас нет тестов в этом банке</p>
+                  <p className="text-gray-400 text-sm">Бұл банкте тесттеріңіз жоқ</p>
                 ) : (
                   <div className="flex flex-col gap-3">
                     {myTests.map((test) => (
@@ -126,44 +126,44 @@ export function TestsPage() {
                           <div>
                             <h3 className="font-medium text-gray-900">{formatTestTitle(test)}</h3>
                             <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
-                              <span>Вопросов для ученика: {test.questionCount}</span>
-                              <span>Время: {test.timeLimit} мин</span>
+                              <span>Оқушыға арналған сұрақтар: {test.questionCount}</span>
+                              <span>Уақыт: {test.timeLimit} мин</span>
                             </div>
                             <div className="flex items-center gap-2 mt-2">
                               <Badge variant={test.published ? 'success' : 'warning'}>
-                                {test.published ? 'Опубликован' : 'Черновик'}
+                                {test.published ? 'Жарияланған' : 'Жоба'}
                               </Badge>
                               {test.published && !isTestAssigned(test.id) && (
-                                <Badge variant="danger">Не назначен ни одному классу</Badge>
+                                <Badge variant="danger">Ешбір сыныпқа тағайындалмаған</Badge>
                               )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2 flex-wrap justify-end">
                             {!test.published && (
                               <Link to={`/moderator/tests/${test.id}/edit`}>
-                                <Button variant="secondary" className="text-xs">Редактировать</Button>
+                                <Button variant="secondary" className="text-xs">Өңдеу</Button>
                               </Link>
                             )}
                             {test.published ? (
                               <>
                                 <Button variant="secondary" className="text-xs" onClick={() => void handlePublish(test.id, false)}>
-                                  Снять
+                                  Алу
                                 </Button>
                                 <Link to={`/moderator/tests/${test.id}/view`}>
-                                  <Button variant="secondary" className="text-xs">Просмотреть</Button>
+                                  <Button variant="secondary" className="text-xs">Қарау</Button>
                                 </Link>
                               </>
                             ) : (
                               <Button variant="secondary" className="text-xs" onClick={() => void handlePublish(test.id, true)}>
-                                Опубликовать
+                                Жариялау
                               </Button>
                             )}
                             <Link to={`/moderator/tests/${test.id}/results`}>
-                              <Button variant="secondary" className="text-xs">Результаты</Button>
+                              <Button variant="secondary" className="text-xs">Нәтижелер</Button>
                             </Link>
                             {!test.published && (
                               <Button variant="danger" className="text-xs" onClick={() => setConfirmDelete(test.id)}>
-                                Удалить
+                                Жою
                               </Button>
                             )}
                           </div>
@@ -176,20 +176,20 @@ export function TestsPage() {
 
               <section>
                 <h2 className="text-base font-semibold text-gray-700 mb-3">
-                  Тесты коллег <span className="text-gray-400 font-normal">({colleagueTests.length})</span>
+                  Әріптестердің тесттері <span className="text-gray-400 font-normal">({colleagueTests.length})</span>
                 </h2>
                 {colleagueTests.length === 0 ? (
-                  <p className="text-gray-400 text-sm">Нет тестов других модераторов в этом банке</p>
+                  <p className="text-gray-400 text-sm">Бұл банкте басқа модераторлардың тесттері жоқ</p>
                 ) : (
                   <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                     <table className="w-full">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Название</th>
-                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Предмет</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Атауы</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Пән</th>
                           <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Автор</th>
-                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Статус</th>
-                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Действия</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Мәртебе</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Әрекеттер</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -200,7 +200,7 @@ export function TestsPage() {
                             <td className="px-4 py-3 text-sm text-gray-500">{getModeratorName(test.createdBy)}</td>
                             <td className="px-4 py-3">
                               <Badge variant={test.published ? 'success' : 'warning'}>
-                                {test.published ? 'Опубликован' : 'Черновик'}
+                                {test.published ? 'Жарияланған' : 'Жоба'}
                               </Badge>
                             </td>
                             <td className="px-4 py-3">
@@ -208,7 +208,7 @@ export function TestsPage() {
                                 to={`/moderator/tests/${test.id}/view`}
                                 className="text-sm text-blue-600 hover:text-blue-800"
                               >
-                                Просмотреть
+                                Қарау
                               </Link>
                             </td>
                           </tr>
@@ -223,11 +223,11 @@ export function TestsPage() {
         </>
       )}
 
-      <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Удалить тест?">
-        <p className="text-sm text-gray-600 mb-4">Это действие нельзя отменить. Все вопросы теста будут удалены.</p>
+      <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Тестті жою керек пе?">
+        <p className="text-sm text-gray-600 mb-4">Бұл әрекетті болдырмауға болмайды. Тесттің барлық сұрақтары жойылады.</p>
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Отмена</Button>
-          <Button variant="danger" onClick={() => confirmDelete && void handleDelete(confirmDelete)}>Удалить</Button>
+          <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Болдырмау</Button>
+          <Button variant="danger" onClick={() => confirmDelete && void handleDelete(confirmDelete)}>Жою</Button>
         </div>
       </Modal>
     </div>

@@ -30,18 +30,18 @@ export function QuestionForm({ initialData, onSubmit, onCancel }: QuestionFormPr
     e.preventDefault()
     setError('')
     if (!text.trim()) {
-      setError('Введите текст вопроса')
+      setError('Сұрақ мәтінін енгізіңіз')
       return
     }
     if (options.some((o) => !o.trim())) {
-      setError('Заполните все варианты ответа')
+      setError('Барлық жауап нұсқаларын толтырыңыз')
       return
     }
     setSubmitting(true)
     try {
       await onSubmit({ text: text.trim(), options: options.map((o) => o.trim()), correctIndex })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка')
+      setError(err instanceof Error ? err.message : 'Қате')
     } finally {
       setSubmitting(false)
     }
@@ -50,7 +50,7 @@ export function QuestionForm({ initialData, onSubmit, onCancel }: QuestionFormPr
   return (
     <form onSubmit={handleSubmit} className="bg-gray-50 rounded-lg p-4 flex flex-col gap-3">
       <div>
-        <label className="text-sm font-medium text-gray-700">Текст вопроса</label>
+        <label className="text-sm font-medium text-gray-700">Сұрақ мәтіні</label>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -59,7 +59,7 @@ export function QuestionForm({ initialData, onSubmit, onCancel }: QuestionFormPr
         />
       </div>
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-gray-700">Варианты ответа</label>
+        <label className="text-sm font-medium text-gray-700">Жауап нұсқалары</label>
         {options.map((option, i) => (
           <div key={i} className="flex items-center gap-2">
             <input
@@ -73,19 +73,19 @@ export function QuestionForm({ initialData, onSubmit, onCancel }: QuestionFormPr
               value={option}
               onChange={(e) => updateOption(i, e.target.value)}
               className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-              placeholder={`Вариант ${String.fromCharCode(65 + i)}`}
+              placeholder={`Нұсқа ${String.fromCharCode(65 + i)}`}
             />
           </div>
         ))}
-        <p className="text-xs text-gray-400 mt-1">Выберите правильный ответ с помощью радиокнопки</p>
+        <p className="text-xs text-gray-400 mt-1">Радиотүймені пайдаланып дұрыс жауапты таңдаңыз</p>
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="flex justify-end gap-2">
         <Button variant="secondary" type="button" onClick={onCancel} className="text-sm">
-          Отмена
+          Болдырмау
         </Button>
         <Button type="submit" isLoading={submitting} className="text-sm">
-          {initialData ? 'Сохранить' : 'Добавить'}
+          {initialData ? 'Сақтау' : 'Қосу'}
         </Button>
       </div>
     </form>

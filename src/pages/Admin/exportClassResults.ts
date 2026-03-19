@@ -64,7 +64,7 @@ export async function exportClassResults(params: {
   const wb = new ExcelJS.Workbook()
   wb.creator = 'EduCore'
 
-  const bankInfo = `${bank.name} | ${bank.academicYear}–${bank.academicYear + 1} | ${bank.quarter} четверть`
+  const bankInfo = `${bank.name} | ${bank.academicYear}–${bank.academicYear + 1} | ${bank.quarter} тоқсан`
 
   // ── Build data structures ──────────────────────────────────────────────────
   const classResults = bankResults.filter((r) => r.classId === classId)
@@ -94,7 +94,7 @@ export async function exportClassResults(params: {
 
   // ── Sheet 1: Итого ─────────────────────────────────────────────────────────
   {
-    const ws = wb.addWorksheet('Итого')
+    const ws = wb.addWorksheet('Жиыны')
     const totalCols = 2 + activeSubjects.length + 2
 
     ws.columns = [
@@ -111,7 +111,7 @@ export async function exportClassResults(params: {
     styleInfoRow(r1)
 
     // Row 2: class info
-    const r2 = ws.addRow([`Класс: ${className}`])
+    const r2 = ws.addRow([`Сынып: ${className}`])
     ws.mergeCells(2, 1, 2, totalCols)
     styleInfoRow(r2)
 
@@ -121,9 +121,9 @@ export async function exportClassResults(params: {
     // Row 4: headers
     const headers = [
       '#',
-      'Ученик',
+      'Оқушы',
       ...activeSubjects.map((s) => `${s.subjectName} [${subjectTotals.get(s.subjectId) ?? '?'}]`),
-      'Итого',
+      'Жиыны',
       '%',
     ]
     const headerRow = ws.addRow(headers)
@@ -156,7 +156,7 @@ export async function exportClassResults(params: {
 
     const avgRowData = [
       '',
-      'Среднее',
+      'Орташа',
       ...activeSubjects.map((s) => {
         const scores = studentRows
           .map((r) => r.bySubject.get(s.subjectId)?.correctCount)
@@ -205,7 +205,7 @@ export async function exportClassResults(params: {
     styleInfoRow(r1)
 
     // Row 2: class + subject
-    const r2 = ws.addRow([`Класс: ${className} | Предмет: ${subject.subjectName}`])
+    const r2 = ws.addRow([`Сынып: ${className} | Пән: ${subject.subjectName}`])
     ws.mergeCells(2, 1, 2, 6)
     styleInfoRow(r2)
 
@@ -214,7 +214,7 @@ export async function exportClassResults(params: {
 
     // Row 4: headers
     const ballLabel = subjectTotal > 0 ? `Балл [${subjectTotal}]` : 'Балл'
-    const headerRow = ws.addRow(['#', 'Ученик', 'Класс', ballLabel, '%', 'Оценка'])
+    const headerRow = ws.addRow(['#', 'Оқушы', 'Сынып', ballLabel, '%', 'Баға'])
     styleHeaderRow(headerRow)
     headerRow.getCell(2).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true }
 
@@ -240,7 +240,7 @@ export async function exportClassResults(params: {
       const totalCorrect = withResults.reduce((a, r) => a + r.result!.correctCount, 0)
       const avgRow = ws.addRow([
         '',
-        'Среднее',
+        'Орташа',
         '—',
         Number((totalCorrect / withResults.length).toFixed(1)),
         `${avgScore}%`,

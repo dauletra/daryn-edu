@@ -5,17 +5,17 @@ export interface ValidationRule {
 
 export const required: ValidationRule = {
   validate: (v) => v.trim().length > 0,
-  message: 'Обязательное поле',
+  message: 'Міндетті өріс',
 }
 
 export const emailRule: ValidationRule = {
   validate: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
-  message: 'Некорректный email',
+  message: 'Қате email форматы',
 }
 
 export const minLength = (min: number): ValidationRule => ({
   validate: (v) => v.length >= min,
-  message: `Минимум ${min} символов`,
+  message: `Кемінде ${min} таңба`,
 })
 
 export function validateField(value: string, rules: ValidationRule[]): string | null {

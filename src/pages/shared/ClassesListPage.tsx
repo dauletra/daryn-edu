@@ -21,7 +21,7 @@ export function ClassesListPage({ basePath }: { basePath: string }) {
     if (!bankId) return null
     const bank = testBanks?.find((b) => b.id === bankId)
     if (!bank) return null
-    return `${bank.name} · ${bank.quarter} четв. ${bank.academicYear}–${bank.academicYear + 1}`
+    return `${bank.name} · ${bank.quarter} тоқс. ${bank.academicYear}–${bank.academicYear + 1}`
   }
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -44,12 +44,12 @@ export function ClassesListPage({ basePath }: { basePath: string }) {
     setSubmitting(true)
     try {
       await createClass(className.trim(), user!.uid)
-      showSuccess('Класс создан')
+      showSuccess('Сынып жасалды')
       setModalOpen(false)
       resetForm()
       refetch()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка создания')
+      showError(err instanceof Error ? err.message : 'Жасау қатесі')
     } finally {
       setSubmitting(false)
     }
@@ -60,8 +60,8 @@ export function ClassesListPage({ basePath }: { basePath: string }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Классы</h1>
-        <Button onClick={() => setModalOpen(true)}>Создать класс</Button>
+        <h1 className="text-2xl font-bold text-gray-900">Сыныптар</h1>
+        <Button onClick={() => setModalOpen(true)}>Сынып жасау</Button>
       </div>
 
       {classes && classes.length > 0 ? (
@@ -75,35 +75,35 @@ export function ClassesListPage({ basePath }: { basePath: string }) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="font-medium text-gray-900">{cls.name}</span>
-                  <Badge variant="info">{cls.studentIds?.length ?? 0} учеников</Badge>
+                  <Badge variant="info">{cls.studentIds?.length ?? 0} оқушы</Badge>
                   {getBankLabel(cls.activeBankId) && (
                     <Badge variant="warning">{getBankLabel(cls.activeBankId)}</Badge>
                   )}
                 </div>
-                <span className="text-sm text-blue-600">Открыть</span>
+                <span className="text-sm text-blue-600">Ашу</span>
               </div>
             </Link>
           ))}
         </div>
       ) : (
         <div className="text-center py-12">
-          <p className="text-gray-500 mb-4">Классов пока нет</p>
-          <Button onClick={() => setModalOpen(true)}>Создать первый класс</Button>
+          <p className="text-gray-500 mb-4">Сыныптар әлі жоқ</p>
+          <Button onClick={() => setModalOpen(true)}>Бірінші сыныпты жасау</Button>
         </div>
       )}
 
-      <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); resetForm() }} title="Новый класс">
+      <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); resetForm() }} title="Жаңа сынып">
         <form onSubmit={handleCreate} className="flex flex-col gap-4">
           <Input
-            label="Название класса"
+            label="Сынып атауы"
             value={className}
             onChange={(e) => setClassName(e.target.value)}
             error={errors.name}
             placeholder="11А"
           />
           <div className="flex justify-end gap-2 mt-2">
-            <Button variant="secondary" type="button" onClick={() => { setModalOpen(false); resetForm() }}>Отмена</Button>
-            <Button type="submit" isLoading={submitting}>Создать</Button>
+            <Button variant="secondary" type="button" onClick={() => { setModalOpen(false); resetForm() }}>Болдырмау</Button>
+            <Button type="submit" isLoading={submitting}>Жасау</Button>
           </div>
         </form>
       </Modal>

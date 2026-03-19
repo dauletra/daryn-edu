@@ -54,18 +54,18 @@ export function TestBanksPage() {
 
   const handleCreate = async () => {
     if (!name.trim()) {
-      showError('Укажите название')
+      showError('Атауын көрсетіңіз')
       return
     }
     setSubmitting(true)
     try {
       await createTestBank({ name: name.trim(), quarter, academicYear: Number(academicYear) })
-      showSuccess('Банк тестов создан')
+      showSuccess('Тест банкі жасалды')
       setShowCreate(false)
       resetForm()
       refetch()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка создания')
+      showError(err instanceof Error ? err.message : 'Жасау қатесі')
     } finally {
       setSubmitting(false)
     }
@@ -76,12 +76,12 @@ export function TestBanksPage() {
     setSubmitting(true)
     try {
       await updateTestBank(editingBank, { name: name.trim(), quarter, academicYear: Number(academicYear) })
-      showSuccess('Банк обновлён')
+      showSuccess('Банк жаңартылды')
       setEditingBank(null)
       resetForm()
       refetch()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка обновления')
+      showError(err instanceof Error ? err.message : 'Жаңарту қатесі')
     } finally {
       setSubmitting(false)
     }
@@ -91,11 +91,11 @@ export function TestBanksPage() {
     if (!confirmDelete) return
     try {
       await deleteTestBank(confirmDelete)
-      showSuccess('Банк удалён')
+      showSuccess('Банк жойылды')
       setConfirmDelete(null)
       refetch()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка удаления')
+      showError(err instanceof Error ? err.message : 'Жою қатесі')
     }
   }
 
@@ -104,8 +104,8 @@ export function TestBanksPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Банки тестов</h1>
-        <Button onClick={() => { resetForm(); setShowCreate(true) }}>Создать банк</Button>
+        <h1 className="text-2xl font-bold text-gray-900">Тест банктары</h1>
+        <Button onClick={() => { resetForm(); setShowCreate(true) }}>Банк жасау</Button>
       </div>
 
       {banks && banks.length > 0 ? (
@@ -121,25 +121,25 @@ export function TestBanksPage() {
                       {bank.name}
                     </Link>
                     <div className="flex items-center gap-3 mt-2 text-sm text-gray-500">
-                      <span>{bank.quarter} четверть</span>
-                      <span>{bank.academicYear}–{bank.academicYear + 1} уч. год</span>
+                      <span>{bank.quarter} тоқсан</span>
+                      <span>{bank.academicYear}–{bank.academicYear + 1} оқу жылы</span>
                     </div>
                     <div className="flex items-center gap-2 mt-2">
-                      <Badge variant="info">Тестов: {testsCount}</Badge>
+                      <Badge variant="info">Тесттер: {testsCount}</Badge>
                       {testsCount > 0 && (
-                        <Badge variant="success">Опубликовано: {publishedCount}</Badge>
+                        <Badge variant="success">Жарияланған: {publishedCount}</Badge>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Link to={`/admin/test-banks/${bank.id}`}>
-                      <Button variant="secondary" className="text-xs">Подробнее</Button>
+                      <Button variant="secondary" className="text-xs">Толығырақ</Button>
                     </Link>
                     <Button variant="secondary" className="text-xs" onClick={() => openEdit(bank.id)}>
-                      Редактировать
+                      Өңдеу
                     </Button>
                     <Button variant="danger" className="text-xs" onClick={() => setConfirmDelete(bank.id)}>
-                      Удалить
+                      Жою
                     </Button>
                   </div>
                 </div>
@@ -149,35 +149,35 @@ export function TestBanksPage() {
         </div>
       ) : (
         <div className="text-center py-12">
-          <p className="text-gray-500 mb-4">Банков тестов пока нет</p>
-          <Button onClick={() => { resetForm(); setShowCreate(true) }}>Создать первый банк</Button>
+          <p className="text-gray-500 mb-4">Тест банктары әлі жоқ</p>
+          <Button onClick={() => { resetForm(); setShowCreate(true) }}>Алғашқы банкті жасау</Button>
         </div>
       )}
 
       {/* Create Modal */}
-      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Создать банк тестов">
+      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Тест банкін жасау">
         <div className="flex flex-col gap-4">
           <Input
-            label="Название"
+            label="Атауы"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="3 четверть 2025"
+            placeholder="3 тоқсан 2025"
           />
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">Четверть</label>
+              <label className="text-sm font-medium text-gray-700">Тоқсан</label>
               <select
                 value={quarter}
                 onChange={(e) => setQuarter(Number(e.target.value) as 1 | 2 | 3 | 4)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {QUARTERS.map((q) => (
-                  <option key={q} value={q}>{q} четверть</option>
+                  <option key={q} value={q}>{q} тоқсан</option>
                 ))}
               </select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">Учебный год</label>
+              <label className="text-sm font-medium text-gray-700">Оқу жылы</label>
               <select
                 value={academicYear}
                 onChange={(e) => setAcademicYear(e.target.value)}
@@ -190,35 +190,35 @@ export function TestBanksPage() {
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setShowCreate(false)}>Отмена</Button>
-            <Button onClick={handleCreate} isLoading={submitting}>Создать</Button>
+            <Button variant="secondary" onClick={() => setShowCreate(false)}>Болдырмау</Button>
+            <Button onClick={handleCreate} isLoading={submitting}>Жасау</Button>
           </div>
         </div>
       </Modal>
 
       {/* Edit Modal */}
-      <Modal isOpen={!!editingBank} onClose={() => { setEditingBank(null); resetForm() }} title="Редактировать банк">
+      <Modal isOpen={!!editingBank} onClose={() => { setEditingBank(null); resetForm() }} title="Банкті өңдеу">
         <div className="flex flex-col gap-4">
           <Input
-            label="Название"
+            label="Атауы"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">Четверть</label>
+              <label className="text-sm font-medium text-gray-700">Тоқсан</label>
               <select
                 value={quarter}
                 onChange={(e) => setQuarter(Number(e.target.value) as 1 | 2 | 3 | 4)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {QUARTERS.map((q) => (
-                  <option key={q} value={q}>{q} четверть</option>
+                  <option key={q} value={q}>{q} тоқсан</option>
                 ))}
               </select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">Учебный год</label>
+              <label className="text-sm font-medium text-gray-700">Оқу жылы</label>
               <select
                 value={academicYear}
                 onChange={(e) => setAcademicYear(e.target.value)}
@@ -231,18 +231,18 @@ export function TestBanksPage() {
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => { setEditingBank(null); resetForm() }}>Отмена</Button>
-            <Button onClick={handleUpdate} isLoading={submitting}>Сохранить</Button>
+            <Button variant="secondary" onClick={() => { setEditingBank(null); resetForm() }}>Болдырмау</Button>
+            <Button onClick={handleUpdate} isLoading={submitting}>Сақтау</Button>
           </div>
         </div>
       </Modal>
 
       {/* Delete Confirmation */}
-      <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Удалить банк?">
-        <p className="text-sm text-gray-600 mb-4">Удаление возможно только если в банке нет тестов.</p>
+      <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Банкті жою керек пе?">
+        <p className="text-sm text-gray-600 mb-4">Жою тек банкте тесттер болмаған жағдайда мүмкін.</p>
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Отмена</Button>
-          <Button variant="danger" onClick={handleDelete}>Удалить</Button>
+          <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Болдырмау</Button>
+          <Button variant="danger" onClick={handleDelete}>Жою</Button>
         </div>
       </Modal>
     </div>

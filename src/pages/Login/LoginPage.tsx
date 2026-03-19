@@ -28,7 +28,7 @@ export function LoginPage() {
     setError('')
 
     if (!email.trim() || !password.trim()) {
-      setError('Заполните все поля')
+      setError('Барлық өрістерді толтырыңыз')
       return
     }
 
@@ -36,11 +36,11 @@ export function LoginPage() {
     try {
       await signIn(email, password)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Ошибка входа'
+      const message = err instanceof Error ? err.message : 'Кіру қатесі'
       if (message.includes('auth/invalid-credential') || message.includes('auth/wrong-password') || message.includes('auth/user-not-found')) {
-        setError('Неверный email или пароль')
+        setError('Қате email немесе құпиясөз')
       } else if (message.includes('auth/too-many-requests')) {
-        setError('Слишком много попыток. Попробуйте позже')
+        setError('Тым көп әрекет. Кейінірек көріңіз')
       } else {
         setError(message)
       }
@@ -63,11 +63,11 @@ export function LoginPage() {
             autoComplete="email"
           />
           <Input
-            label="Пароль"
+            label="Құпиясөз"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Введите пароль"
+            placeholder="Құпиясөзді енгізіңіз"
             autoComplete="current-password"
           />
           {error && (
@@ -76,7 +76,7 @@ export function LoginPage() {
             </div>
           )}
           <Button type="submit" isLoading={isSubmitting}>
-            Войти
+            Кіру
           </Button>
         </form>
       </div>

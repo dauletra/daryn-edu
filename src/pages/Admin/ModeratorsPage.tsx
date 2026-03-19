@@ -41,14 +41,14 @@ export function ModeratorsPage() {
     setSubmitting(true)
     try {
       await createModerator(name.trim(), email.trim(), password)
-      showSuccess('Модератор создан')
+      showSuccess('Модератор жасалды')
       setModalOpen(false)
       resetForm()
       refetch()
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Ошибка создания'
+      const msg = err instanceof Error ? err.message : 'Жасау қатесі'
       if (msg.includes('email-already-in-use')) {
-        showError('Этот email уже используется')
+        showError('Бұл email тіркелген')
       } else {
         showError(msg)
       }
@@ -60,10 +60,10 @@ export function ModeratorsPage() {
   const handleToggleStatus = async (uid: string, currentDisabled: boolean) => {
     try {
       await toggleModeratorStatus(uid, !currentDisabled)
-      showSuccess(!currentDisabled ? 'Модератор заблокирован' : 'Модератор разблокирован')
+      showSuccess(!currentDisabled ? 'Модератор бұғатталды' : 'Модератор бұғаттан шығарылды')
       refetch()
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Ошибка')
+      showError(err instanceof Error ? err.message : 'Қате')
     }
   }
 
@@ -72,8 +72,8 @@ export function ModeratorsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Модераторы</h1>
-        <Button onClick={() => setModalOpen(true)}>Добавить модератора</Button>
+        <h1 className="text-2xl font-bold text-gray-900">Модераторлар</h1>
+        <Button onClick={() => setModalOpen(true)}>Модератор қосу</Button>
       </div>
 
       {moderators && moderators.length > 0 ? (
@@ -81,10 +81,10 @@ export function ModeratorsPage() {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Имя</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Аты-жөні</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Email</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Статус</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Действия</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Мәртебе</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Әрекеттер</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -94,7 +94,7 @@ export function ModeratorsPage() {
                   <td className="px-4 py-3 text-sm text-gray-500">{mod.email}</td>
                   <td className="px-4 py-3">
                     <Badge variant={mod.disabled ? 'danger' : 'success'}>
-                      {mod.disabled ? 'Заблокирован' : 'Активен'}
+                      {mod.disabled ? 'Бұғатталған' : 'Белсенді'}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
@@ -102,7 +102,7 @@ export function ModeratorsPage() {
                       onClick={() => handleToggleStatus(mod.uid, !!mod.disabled)}
                       className={`text-sm cursor-pointer ${mod.disabled ? 'text-green-600 hover:text-green-800' : 'text-red-600 hover:text-red-800'}`}
                     >
-                      {mod.disabled ? 'Разблокировать' : 'Заблокировать'}
+                      {mod.disabled ? 'Бұғаттан шығару' : 'Бұғаттау'}
                     </button>
                   </td>
                 </tr>
@@ -111,19 +111,19 @@ export function ModeratorsPage() {
           </table>
         </div>
       ) : (
-        <p className="text-gray-500">Модераторов пока нет</p>
+        <p className="text-gray-500">Модераторлар әлі жоқ</p>
       )}
 
-      <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); resetForm() }} title="Новый модератор">
+      <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); resetForm() }} title="Жаңа модератор">
         <form onSubmit={handleCreate} className="flex flex-col gap-4">
-          <Input label="Имя" value={name} onChange={(e) => setName(e.target.value)} error={errors.name} />
+          <Input label="Аты-жөні" value={name} onChange={(e) => setName(e.target.value)} error={errors.name} />
           <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} error={errors.email} />
-          <Input label="Пароль" type="password" value={password} onChange={(e) => setPassword(e.target.value)} error={errors.password} />
+          <Input label="Құпиясөз" type="password" value={password} onChange={(e) => setPassword(e.target.value)} error={errors.password} />
           <div className="flex justify-end gap-2 mt-2">
             <Button variant="secondary" type="button" onClick={() => { setModalOpen(false); resetForm() }}>
-              Отмена
+              Болдырмау
             </Button>
-            <Button type="submit" isLoading={submitting}>Создать</Button>
+            <Button type="submit" isLoading={submitting}>Жасау</Button>
           </div>
         </form>
       </Modal>

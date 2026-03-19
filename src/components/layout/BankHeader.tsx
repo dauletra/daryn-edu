@@ -8,7 +8,7 @@ export function BankHeader() {
   if (banks.length === 0) {
     return (
       <div className="bg-amber-50 border-b border-amber-100 px-6 py-2.5 flex items-center gap-2">
-        <span className="text-sm text-amber-700">⚠ Банки тестов ещё не созданы</span>
+        <span className="text-sm text-amber-700">⚠ Тест банктары әлі жасалмаған</span>
       </div>
     )
   }
@@ -16,7 +16,7 @@ export function BankHeader() {
   return (
     <div className="bg-white border-b border-gray-200 px-6 py-2.5 flex items-center gap-3">
       <span className="text-xs font-medium text-gray-400 uppercase tracking-wide shrink-0">
-        Банк тестов
+        Тест банкі
       </span>
       <select
         value={selectedBankId}
@@ -25,7 +25,7 @@ export function BankHeader() {
       >
         {banks.map((b) => (
           <option key={b.id} value={b.id}>
-            {b.name} — {b.quarter} четв. {b.academicYear}–{b.academicYear + 1}
+            {b.name} — {b.quarter} тоқс. {b.academicYear}–{b.academicYear + 1}
           </option>
         ))}
       </select>

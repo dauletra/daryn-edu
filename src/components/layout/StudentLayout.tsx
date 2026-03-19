@@ -18,21 +18,21 @@ function StudentSidebar() {
       <div className="p-4 border-b border-gray-200">
         <h2 className="text-lg font-bold text-gray-900">EduCore</h2>
         <p className="text-sm text-gray-500">{user?.name}</p>
-        <p className="text-xs text-gray-400">Ученик</p>
+        <p className="text-xs text-gray-400">Оқушы</p>
       </div>
       <nav className="flex-1 p-4 flex flex-col gap-1">
         {isTestingActive ? (
           <>
-            <span className={disabledNavClass}>Главная</span>
-            <span className={disabledNavClass}>Мои тесты</span>
+            <span className={disabledNavClass}>Басты бет</span>
+            <span className={disabledNavClass}>Менің тесттерім</span>
           </>
         ) : (
           <>
             <NavLink to="/student" end className={navLinkClass}>
-              Главная
+              Басты бет
             </NavLink>
             <NavLink to="/student/tests" className={navLinkClass}>
-              Мои тесты
+              Менің тесттерім
             </NavLink>
           </>
         )}
@@ -42,7 +42,7 @@ function StudentSidebar() {
           onClick={signOut}
           className="w-full px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
         >
-          Выйти
+          Шығу
         </button>
       </div>
     </aside>
