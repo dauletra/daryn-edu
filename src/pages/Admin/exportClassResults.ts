@@ -1,6 +1,7 @@
 import ExcelJS from 'exceljs'
 import type { TestResult, AppUser, TestBank } from '@/types'
 import { getGrade } from '@/utils/scoreUtils'
+import { formatDuration } from '@/utils/timeUtils'
 
 export interface SubjectMeta { subjectId: string; subjectName: string }
 
@@ -186,6 +187,7 @@ export async function exportClassResults(params: {
       { width: 12 },
       { width: 8 },
       { width: 8 },
+      { width: 12 },
     ]
 
     const subjectResultMap = new Map<string, TestResult>()
@@ -201,12 +203,12 @@ export async function exportClassResults(params: {
 
     // Row 1: bank info
     const r1 = ws.addRow([bankInfo])
-    ws.mergeCells(1, 1, 1, 6)
+    ws.mergeCells(1, 1, 1, 7)
     styleInfoRow(r1)
 
     // Row 2: class + subject
     const r2 = ws.addRow([`Сынып: ${className} | Пән: ${subject.subjectName}`])
-    ws.mergeCells(2, 1, 2, 6)
+    ws.mergeCells(2, 1, 2, 7)
     styleInfoRow(r2)
 
     // Row 3: empty
@@ -214,7 +216,7 @@ export async function exportClassResults(params: {
 
     // Row 4: headers
     const ballLabel = subjectTotal > 0 ? `Балл [${subjectTotal}]` : 'Балл'
-    const headerRow = ws.addRow(['#', 'Оқушы', 'Сынып', ballLabel, '%', 'Баға'])
+    const headerRow = ws.addRow(['#', 'Оқушы', 'Сынып', ballLabel, '%', 'Баға', 'Уақыты'])
     styleHeaderRow(headerRow)
     headerRow.getCell(2).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true }
 
@@ -227,6 +229,9 @@ export async function exportClassResults(params: {
         result ? result.correctCount : '—',
         result ? `${result.score}%` : '—',
         result ? getGrade(result.score) : '—',
+        result?.submittedAt && result.startedAt
+          ? formatDuration(result.startedAt, result.submittedAt)
+          : '—',
       ]
       const row = ws.addRow(rowData)
       styleDataRow(row, 2)
@@ -245,6 +250,7 @@ export async function exportClassResults(params: {
         Number((totalCorrect / withResults.length).toFixed(1)),
         `${avgScore}%`,
         avgGrade,
+        '—',
       ])
       styleAvgRow(avgRow)
     }

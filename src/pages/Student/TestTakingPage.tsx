@@ -40,11 +40,14 @@ export function TestTakingPage() {
   const [timeExpired, setTimeExpired] = useState(false)
   const [showFullscreenWarning, setShowFullscreenWarning] = useState(false)
 
+  const [durationMs, setDurationMs] = useState<number | null>(null)
+
   const answersRef = useRef<(number | null)[]>([])
   const submittedRef = useRef(false)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null)
   const lastSavedRef = useRef<string>('')
   const wasFullscreenRef = useRef(false)
+  const testStartTimeRef = useRef<number>(0)
 
   // --- Auto-save: debounced on change ---
 
@@ -158,6 +161,7 @@ export function TestTakingPage() {
     try {
       const result = await submitTestFn(resultId, answerPayload)
       setScore({ correct: result.correctCount, total: result.total, percent: result.score })
+      if (testStartTimeRef.current) setDurationMs(Date.now() - testStartTimeRef.current)
       setPhase('finished')
     } catch {
       submittedRef.current = false
@@ -236,6 +240,7 @@ export function TestTakingPage() {
         answersRef.current = empty
       }
 
+      testStartTimeRef.current = Date.now()
       startTimer(result.remainingSeconds!)
       setPhase('testing')
     } catch {
@@ -300,6 +305,11 @@ export function TestTakingPage() {
           <p className="text-gray-600 text-lg">
             {score.correct} / {score.total}
           </p>
+          {durationMs !== null && (
+            <p className="text-gray-400 text-sm mt-1">
+              {Math.floor(durationMs / 60000)} мин {Math.floor((durationMs % 60000) / 1000)} сек
+            </p>
+          )}
           <Button
             className="mt-6"
             onClick={() => navigate('/student/tests')}

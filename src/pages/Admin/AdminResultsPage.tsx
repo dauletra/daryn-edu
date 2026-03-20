@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { getGrade, getScoreColor, getGradeColor } from '@/utils/scoreUtils'
+import { formatDuration } from '@/utils/timeUtils'
 import type { TestResult, AppUser } from '@/types'
 
 export function AdminResultsPage() {
@@ -373,6 +374,7 @@ function SubjectView({ bankResults, subjectId, className, classStudents, canRese
             </th>
             <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">%</th>
             <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Баға</th>
+            <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">Уақыты</th>
             {(canReset || onResetRequest) && (
               <th className="text-center px-4 py-3 text-sm font-medium text-gray-500"></th>
             )}
@@ -392,6 +394,11 @@ function SubjectView({ bankResults, subjectId, className, classStudents, canRese
               </td>
               <td className="px-4 py-3 text-center">
                 {result ? <GradeBadge score={result.score} /> : <span className="text-gray-300">—</span>}
+              </td>
+              <td className="px-4 py-3 text-sm text-center text-gray-500">
+                {result?.submittedAt && result.startedAt
+                  ? formatDuration(result.startedAt, result.submittedAt)
+                  : <span className="text-gray-300">—</span>}
               </td>
               {(canReset || onResetRequest) && (
                 <td className="px-4 py-3 text-center">
@@ -429,6 +436,7 @@ function SubjectView({ bankResults, subjectId, className, classStudents, canRese
                 <td className="px-4 py-3 text-center font-bold text-sm text-gray-900">
                   {avgGrade}
                 </td>
+                <td />
                 {(canReset || onResetRequest) && <td />}
               </tr>
             </tfoot>

@@ -7,6 +7,7 @@ import { useToast } from '@/context/ToastContext'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Badge } from '@/components/ui/Badge'
 import { getScoreVariant } from '@/utils/scoreUtils'
+import { formatDuration } from '@/utils/timeUtils'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { MathText } from '@/components/ui/MathText'
@@ -211,6 +212,7 @@ export function TestResultsPage() {
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Тоқсан</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Нәтиже</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Қателер</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Уақыты</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Әрекеттер</th>
               </tr>
             </thead>
@@ -222,7 +224,7 @@ export function TestResultsPage() {
                       className="px-4 py-3 cursor-pointer hover:bg-gray-50 flex items-center"
                       onClick={() => handleExpandResult(result)}
                     >
-                      <div className="flex-1 grid grid-cols-5 gap-4 items-center">
+                      <div className="flex-1 grid grid-cols-6 gap-4 items-center">
                         <span className="text-sm text-gray-900">{getStudentName(result.studentId)}</span>
                         <span className="text-sm text-gray-500">{result.quarter}</span>
                         <span className="text-sm">
@@ -232,6 +234,11 @@ export function TestResultsPage() {
                         </span>
                         <span className="text-sm text-gray-500">
                           {result.wrongQuestionIds.length} қате
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {result.submittedAt && result.startedAt
+                            ? formatDuration(result.startedAt, result.submittedAt)
+                            : '—'}
                         </span>
                         <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                           <button
