@@ -11,12 +11,13 @@
 ## Команды
 
 ```bash
-npm run dev          # локальный сервер
-npm run build        # TypeScript + Vite build
-npm run lint         # ESLint
-npm run deploy       # build + firebase deploy (хостинг + functions)
-npm run deploy:hosting  # только хостинг
-npm run deploy:rules    # только правила Firestore
+npm run dev               # локальный сервер
+npm run build             # TypeScript + Vite build
+npm run lint              # ESLint
+npm run deploy            # build + firebase deploy (хостинг + functions + правила)
+npm run deploy:hosting    # только хостинг
+npm run deploy:functions  # только Cloud Functions
+npm run deploy:rules      # только правила Firestore + индексы
 ```
 
 ## Архитектура
@@ -51,6 +52,14 @@ npm run deploy:rules    # только правила Firestore
   - `ClassDetailPage` — принимает `backTo`, `backLabel`
   - `StudentsPage`
   - `TestViewPage` — принимает `backTo`, `backLabel`
+
+### UI-компоненты (`src/components/`)
+- `ui/` — примитивы: `Button`, `Input`, `Modal`, `Badge`, `LoadingSpinner`, `MathText`
+- `layout/` — `AdminLayout`, `ModeratorLayout`, `StudentLayout`, `ProtectedRoute`, `BankHeader`
+- `feedback/` — `ErrorBoundary` (для ошибок в провайдерах), `RouteErrorBoundary` (для `errorElement` React Router; ловит ChunkLoadError после деплоя и автоматически делает один `window.location.reload()`)
+
+### Hosting (firebase.json)
+Ассеты с хешами в имени (js/css/woff/png/...) кешируются на год (`Cache-Control: immutable`). `index.html` отдаётся с `no-cache` — гарантирует, что новые деплои подхватываются клиентами сразу.
 
 ## Язык интерфейса
 
@@ -108,3 +117,30 @@ showError(err instanceof Error ? err.message : 'Қате')
 ## Оценки (src/utils/scoreUtils.ts)
 
 Пороги оценок вынесены в `scoreUtils.ts`. Не дублировать их в компонентах — всегда использовать `getScoreVariant(score)`.
+
+## Firebase Blaze: бесплатный лимит
+
+Проект **должен укладываться в бесплатные квоты Blaze**. Стоимость считается за каждую операцию, дешёвых ресурсов не бывает.
+
+**Дневные лимиты Firestore (бесплатно):**
+- 50 000 reads, 20 000 writes, 20 000 deletes
+- 1 GiB storage, 10 GiB egress в месяц
+
+**Месячные лимиты Cloud Functions (бесплатно):**
+- 2M invocations, 400 000 GB-секунд, 200 000 CPU-секунд
+
+**Что считается за read:**
+- каждый документ в `getDocs` / `getDoc`
+- каждое срабатывание `onSnapshot` listener
+- **каждый `get(...)` в Security Rules** — критично
+
+### Правила при изменении кода
+
+1. **Не добавлять `onSnapshot` для редко меняющихся данных** (классы, предметы, банки тестов). Использовать `getDocs` + `useFirestoreQuery`.
+2. **Не загружать всю коллекцию для аналитики на клиенте.** Если нужна агрегация — делать в Cloud Function через `getCountFromServer` или хранить готовые агрегаты.
+3. **При запросах с фильтрами добавлять `limit()`** где уместно (таблицы с пагинацией).
+4. **Не предлагать триггеры (`onWrite`/`onDocumentWritten`) на часто-меняющиеся коллекции** без явной выгоды — каждый триггер = invocation.
+5. **Не трогать Firestore Security Rules без эмулятора.** Синтаксис `request.auth.token.foo != null` для отсутствующих полей ведёт себя непредсказуемо. Предложения по оптимизации правил (например, через custom claims) требуют проверки в `firebase emulators:start` перед деплоем — иначе можно случайно запретить доступ ко всем данным в проде.
+6. **Денормализация — норма** для Firestore. `TestResult` намеренно хранит `classLevel`, `subject`, `testBankId` — чтобы избежать JOIN'ов и лишних reads.
+
+Перед предложением «оптимизаций», экономящих <1000 reads/день, оценить риск против выгоды — обычно не стоит.

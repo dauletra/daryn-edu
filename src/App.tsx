@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom'
 import { AuthProvider } from '@/context/AuthContext'
 import { ToastProvider } from '@/context/ToastContext'
 import { BankProvider } from '@/context/BankContext'
@@ -8,6 +8,8 @@ import { AdminLayout } from '@/components/layout/AdminLayout'
 import { ModeratorLayout } from '@/components/layout/ModeratorLayout'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
+import { RouteErrorBoundary } from '@/components/feedback/RouteErrorBoundary'
 
 // Lazy-loaded pages
 const LoginPage         = lazy(() => import('@/pages/Login/LoginPage').then(m => ({ default: m.LoginPage })))
@@ -41,6 +43,10 @@ const fallback = (
 )
 
 const router = createBrowserRouter([
+  {
+    element: <Outlet />,
+    errorElement: <RouteErrorBoundary />,
+    children: [
   {
     path: '/login',
     element: <Suspense fallback={fallback}><LoginPage /></Suspense>,
@@ -110,16 +116,20 @@ const router = createBrowserRouter([
       { path: 'tests/:id/take', element: <Suspense fallback={fallback}><TestTakingPage /></Suspense> },
     ],
   },
+    ],
+  },
 ])
 
 export default function App() {
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <BankProvider>
-          <RouterProvider router={router} />
-        </BankProvider>
-      </ToastProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <ToastProvider>
+          <BankProvider>
+            <RouterProvider router={router} />
+          </BankProvider>
+        </ToastProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }
