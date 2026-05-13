@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(npm install firebase react-router-dom)",
-      "Bash(npm install -D tailwindcss @tailwindcss/vite)"
+      "Bash(npm install -D tailwindcss @tailwindcss/vite)",
+      "Bash(npm run *)"
     ]
   }
 }

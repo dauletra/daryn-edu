@@ -1,4 +1,4 @@
-import type { TestResult, Class, AppUser, ClassLevel } from '@/types'
+import type { TestResult, Class, StudentUser, ClassLevel } from '@/types'
 import { getGrade } from '@/utils/scoreUtils'
 
 export interface ClassRow {
@@ -38,7 +38,7 @@ function avgGradeOf(results: TestResult[]) {
 
 export function computeOverallStats(
   results: TestResult[],
-  students: AppUser[]
+  students: StudentUser[]
 ): OverallStats | null {
   if (results.length === 0) return null
   const uniqueStudents = new Set(results.map((r) => r.studentId)).size
@@ -52,7 +52,7 @@ export function computeOverallStats(
 export function groupByClass(
   results: TestResult[],
   classes: Class[],
-  students: AppUser[]
+  students: StudentUser[]
 ): ClassRow[] {
   return classes
     .map((cls) => {
@@ -75,7 +75,7 @@ export function groupByClass(
     .sort((a, b) => a.className.localeCompare(b.className))
 }
 
-export function groupBySubject(results: TestResult[], _students: AppUser[]): SubjectRow[] {
+export function groupBySubject(results: TestResult[], _students: StudentUser[]): SubjectRow[] {
   const bySubject = new Map<string, TestResult[]>()
 
   for (const r of results) {

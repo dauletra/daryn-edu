@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { useState, useEffect } from 'react'
-import type { TestResult, Test } from '@/types'
+import { isStudent, type TestResult, type Test } from '@/types'
 
 interface TestWithStatus {
   test: Test
@@ -15,10 +15,11 @@ interface TestWithStatus {
 
 export function StudentTestsPage() {
   const { user } = useAuth()
-  const hasClassId = Boolean(user?.classId)
+  // Route guard guarantees role === 'student' here, but narrow explicitly for the type checker.
+  const studentClassId = user && isStudent(user) ? user.classId : undefined
   const { data: assigned, loading, error, refetch } = useFirestoreQuery(
-    () => hasClassId ? getAssignedTests(user!.classId!) : Promise.resolve([]),
-    [user?.classId]
+    () => studentClassId ? getAssignedTests(studentClassId) : Promise.resolve([]),
+    [studentClassId]
   )
   const [testsWithStatus, setTestsWithStatus] = useState<TestWithStatus[]>([])
   const [loadingResults, setLoadingResults] = useState(false)
@@ -36,7 +37,7 @@ export function StudentTestsPage() {
       .finally(() => setLoadingResults(false))
   }, [assigned, user])
 
-  if (!user?.classId) {
+  if (!studentClassId) {
     return (
       <div>
         <h1 className="text-2xl font-bold text-gray-900 mb-4">Менің тесттерім</h1>

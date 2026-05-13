@@ -12,16 +12,41 @@ export const LANGUAGES = [
 
 export type Language = typeof LANGUAGES[number]['value']
 
-export interface AppUser {
+/** Fields shared by every user role. */
+interface BaseUser {
   uid: string
   name: string
   email: string
-  role: UserRole
-  classId?: string
-  disabled?: boolean
-  plainPassword?: string
   createdAt: Timestamp | Date
 }
+
+export interface AdminUser extends BaseUser {
+  role: 'admin'
+}
+
+export interface ModeratorUser extends BaseUser {
+  role: 'moderator'
+  /** Set by admin to revoke access without deleting the account. */
+  disabled?: boolean
+}
+
+export interface StudentUser extends BaseUser {
+  role: 'student'
+  /** Empty string when student has been removed from a class. */
+  classId?: string
+  /** Stored plain so admins/moderators can hand out credentials; never expose to other students. */
+  plainPassword?: string
+}
+
+/**
+ * Discriminated union over `role`.
+ * Narrow with `user.role === 'student'` or the `isStudent`/`isModerator`/`isAdmin` helpers below.
+ */
+export type AppUser = AdminUser | ModeratorUser | StudentUser
+
+export const isAdmin = (u: AppUser): u is AdminUser => u.role === 'admin'
+export const isModerator = (u: AppUser): u is ModeratorUser => u.role === 'moderator'
+export const isStudent = (u: AppUser): u is StudentUser => u.role === 'student'
 
 export interface Subject {
   id: string
