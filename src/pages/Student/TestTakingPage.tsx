@@ -9,6 +9,7 @@ import {
   updateResult,
   startTestFn,
   submitTestFn,
+  logTestEventFn,
 } from '@/services/db'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
@@ -16,7 +17,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { MathText } from '@/components/ui/MathText'
 import { Calculator } from '@/components/testing/Calculator'
 import { PeriodicTable } from '@/components/testing/PeriodicTable'
-import type { StudentQuestion, Test } from '@/types'
+import type { StudentQuestion, Test, TestEventType } from '@/types'
 
 type Phase = 'loading' | 'pre_start' | 'testing' | 'finished'
 
@@ -41,6 +42,8 @@ export function TestTakingPage() {
   const [submitError, setSubmitError] = useState(false)
   const [timeExpired, setTimeExpired] = useState(false)
   const [showFullscreenWarning, setShowFullscreenWarning] = useState(false)
+  const [showTabWarning, setShowTabWarning] = useState(false)
+  const [tabSwitchCount, setTabSwitchCount] = useState(0)
   const [calcOpen, setCalcOpen] = useState(false)
   const [tableOpen, setTableOpen] = useState(false)
 
@@ -51,7 +54,42 @@ export function TestTakingPage() {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null)
   const lastSavedRef = useRef<string>('')
   const wasFullscreenRef = useRef(false)
+  const wasHiddenRef = useRef(false)
   const testStartTimeRef = useRef<number>(0)
+
+  // --- Anti-cheating event audit log ---
+  const resultIdRef = useRef('')
+  const eventQueueRef = useRef<{ type: TestEventType; at: number }[]>([])
+  const flushTimerRef = useRef<ReturnType<typeof setTimeout>>(null)
+  const lastEventAtRef = useRef<Map<TestEventType, number>>(new Map())
+
+  useEffect(() => {
+    resultIdRef.current = resultId
+  }, [resultId])
+
+  const flushEvents = useCallback(async () => {
+    if (!resultIdRef.current || eventQueueRef.current.length === 0) return
+    const batch = eventQueueRef.current
+    eventQueueRef.current = []
+    try {
+      await logTestEventFn(resultIdRef.current, batch)
+    } catch {
+      // Silent fail — re-queueing risks infinite loops on persistent errors
+    }
+  }, [])
+
+  /** Dedupes rapid same-type events (e.g. blur fires twice on Alt+Tab),
+   *  then flushes the queue 3s later. Cost: roughly one write per 3s of activity. */
+  const logEvent = useCallback((type: TestEventType) => {
+    const now = Date.now()
+    const lastTime = lastEventAtRef.current.get(type) ?? 0
+    if (now - lastTime < 3000) return
+    lastEventAtRef.current.set(type, now)
+
+    eventQueueRef.current.push({ type, at: now })
+    if (flushTimerRef.current) clearTimeout(flushTimerRef.current)
+    flushTimerRef.current = setTimeout(() => { flushEvents() }, 3000)
+  }, [flushEvents])
 
   // --- Auto-save: debounced on change ---
 
@@ -144,8 +182,93 @@ export function TestTakingPage() {
     if (wasFullscreenRef.current) {
       playBeep()
       setShowFullscreenWarning(true)
+      logEvent('fullscreen_exit')
     }
-  }, [isFullscreen, phase, playBeep])
+  }, [isFullscreen, phase, playBeep, logEvent])
+
+  // Tab visibility + window blur tracking (catches Alt+Tab, minimize, etc.)
+  useEffect(() => {
+    if (phase !== 'testing') return
+    const onVisChange = () => {
+      if (document.hidden) {
+        wasHiddenRef.current = true
+        logEvent('tab_hidden')
+      } else if (wasHiddenRef.current) {
+        wasHiddenRef.current = false
+        setShowTabWarning(true)
+        setTabSwitchCount((c) => c + 1)
+        playBeep()
+      }
+    }
+    const onBlur = () => {
+      // visibilitychange covers most cases; blur catches focus loss without tab switch
+      if (!document.hidden) logEvent('window_blur')
+    }
+    document.addEventListener('visibilitychange', onVisChange)
+    window.addEventListener('blur', onBlur)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisChange)
+      window.removeEventListener('blur', onBlur)
+    }
+  }, [phase, logEvent, playBeep])
+
+  // Block back/forward navigation during test
+  useEffect(() => {
+    if (phase !== 'testing') return
+    history.pushState(null, '', window.location.href)
+    const onPop = () => {
+      history.pushState(null, '', window.location.href)
+      logEvent('back_attempt')
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [phase, logEvent])
+
+  // Block devtools/print/save shortcuts
+  useEffect(() => {
+    if (phase !== 'testing') return
+    const onKeyDown = (e: KeyboardEvent) => {
+      // F12
+      if (e.key === 'F12') {
+        e.preventDefault()
+        logEvent('devtools_shortcut')
+        return
+      }
+      const k = e.key.toLowerCase()
+      // Ctrl+Shift+I / J / C (devtools)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (k === 'i' || k === 'j' || k === 'c')) {
+        e.preventDefault()
+        logEvent('devtools_shortcut')
+        return
+      }
+      // Ctrl+U (view source)
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && k === 'u') {
+        e.preventDefault()
+        logEvent('devtools_shortcut')
+        return
+      }
+      // Ctrl+P (print) / Ctrl+S (save)
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (k === 'p' || k === 's')) {
+        e.preventDefault()
+        logEvent('print_attempt')
+        return
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [phase, logEvent])
+
+  // Flush pending events on unmount
+  useEffect(() => {
+    return () => {
+      if (flushTimerRef.current) clearTimeout(flushTimerRef.current)
+      flushEvents()
+    }
+  }, [flushEvents])
+
+  const handleDismissTabWarning = useCallback(() => {
+    setShowTabWarning(false)
+  }, [])
 
   // --- Submit test via Cloud Function ---
 
@@ -156,6 +279,10 @@ export function TestTakingPage() {
     setSubmitting(true)
     setSubmitError(false)
     if (fromTimer) setTimeExpired(true)
+
+    // Flush any pending audit events before submitting (best-effort)
+    if (flushTimerRef.current) clearTimeout(flushTimerRef.current)
+    await flushEvents()
 
     const answerPayload = questions.map((q, i) => ({
       questionId: q.id,
@@ -173,7 +300,7 @@ export function TestTakingPage() {
     } finally {
       setSubmitting(false)
     }
-  }, [questions, resultId])
+  }, [questions, resultId, flushEvents])
 
   const handleTimerExpire = useCallback(() => {
     handleSubmit(true)
@@ -329,7 +456,14 @@ export function TestTakingPage() {
     const currentQuestion = questions[currentIndex]
 
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div
+        className="min-h-screen bg-gray-50"
+        onCopy={(e) => { e.preventDefault(); logEvent('copy_attempt') }}
+        onCut={(e) => { e.preventDefault(); logEvent('copy_attempt') }}
+        onPaste={(e) => { e.preventDefault(); logEvent('paste_attempt') }}
+        onContextMenu={(e) => { e.preventDefault(); logEvent('context_menu') }}
+        onDragStart={(e) => { e.preventDefault() }}
+      >
         {/* Fullscreen warning */}
         {!isFullscreen && !showFullscreenWarning && (
           <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-2 flex items-center justify-between">
@@ -408,7 +542,7 @@ export function TestTakingPage() {
           </div>
 
           {/* Question */}
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <div className="bg-white rounded-xl shadow-sm p-6 mb-6 select-none">
             <div className="text-lg text-gray-900 mb-6"><MathText text={currentQuestion.text} /></div>
             <div className="flex flex-col gap-3">
               {currentQuestion.options.map((option, i) => (
@@ -528,6 +662,31 @@ export function TestTakingPage() {
                 className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-xl text-base transition-colors cursor-pointer animate-pulse"
               >
                 Толық экран режиміне оралу
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Tab switch warning overlay — shown when student returns from another tab/window */}
+        {showTabWarning && !showFullscreenWarning && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div className="animate-pulse bg-orange-500 absolute inset-0 opacity-10 pointer-events-none" />
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 p-8 text-center border-4 border-orange-500">
+              <div className="animate-bounce text-5xl mb-4 select-none">⚠️</div>
+              <h2 className="text-xl font-bold text-orange-700 mb-2">
+                Бетті ауыстырғаныңыз тіркелді
+              </h2>
+              <p className="text-sm text-gray-600 mb-2">
+                Тест кезінде басқа бетке немесе бағдарламаға ауыспаңыз. Бұл әрекет мұғалімге көрсетіледі.
+              </p>
+              <p className="text-xs text-gray-500 mb-6">
+                Ауысу саны: <span className="font-bold text-orange-700">{tabSwitchCount}</span>
+              </p>
+              <button
+                onClick={handleDismissTabWarning}
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-6 rounded-xl text-base transition-colors cursor-pointer"
+              >
+                Түсіндім, тестке оралу
               </button>
             </div>
           </div>

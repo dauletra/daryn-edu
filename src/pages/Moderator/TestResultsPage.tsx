@@ -11,6 +11,7 @@ import { formatDuration } from '@/utils/timeUtils'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { MathText } from '@/components/ui/MathText'
+import { TestViolations } from '@/components/feedback/TestViolations'
 import type { TestResult, Question } from '@/types'
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -213,18 +214,19 @@ export function TestResultsPage() {
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Нәтиже</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Қателер</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Уақыты</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Бұзушылық</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Әрекеттер</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredResults.map((result) => (
                 <tr key={result.id}>
-                  <td colSpan={5} className="p-0">
+                  <td colSpan={7} className="p-0">
                     <div
                       className="px-4 py-3 cursor-pointer hover:bg-gray-50 flex items-center"
                       onClick={() => handleExpandResult(result)}
                     >
-                      <div className="flex-1 grid grid-cols-6 gap-4 items-center">
+                      <div className="flex-1 grid grid-cols-7 gap-4 items-center">
                         <span className="text-sm text-gray-900">{getStudentName(result.studentId)}</span>
                         <span className="text-sm text-gray-500">{result.quarter}</span>
                         <span className="text-sm">
@@ -239,6 +241,13 @@ export function TestResultsPage() {
                           {result.submittedAt && result.startedAt
                             ? formatDuration(result.startedAt, result.submittedAt)
                             : '—'}
+                        </span>
+                        <span className="text-sm" onClick={(e) => e.stopPropagation()}>
+                          <TestViolations
+                            events={result.events}
+                            studentName={getStudentName(result.studentId)}
+                            startedAt={result.startedAt}
+                          />
                         </span>
                         <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                           <button

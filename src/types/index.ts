@@ -121,6 +121,23 @@ export interface Answer {
   correct?: boolean // Set server-side during grading
 }
 
+/** Anti-cheating audit events appended to TestResult.events during testing. */
+export type TestEventType =
+  | 'fullscreen_exit'
+  | 'tab_hidden'
+  | 'window_blur'
+  | 'copy_attempt'
+  | 'paste_attempt'
+  | 'context_menu'
+  | 'back_attempt'
+  | 'devtools_shortcut'
+  | 'print_attempt'
+
+export interface TestEvent {
+  type: TestEventType
+  at: Timestamp | Date
+}
+
 export interface TestResult {
   id: string
   testId: string
@@ -142,6 +159,8 @@ export interface TestResult {
   /** map[shuffledPos] = originalPos — used only for server-side grading */
   optionsMap?: Record<string, number[]>
   answers: Answer[]
+  /** Audit trail of anti-cheating events (tab switches, copy attempts, etc.). */
+  events?: TestEvent[]
   wrongQuestionIds: string[]
   correctCount: number
   score: number

@@ -9,6 +9,7 @@
 export { generateQuestions } from "./ai/generateQuestions";
 export { startTest } from "./tests/startTest";
 export { submitTest } from "./tests/submitTest";
+export { logTestEvent } from "./tests/logTestEvent";
 export { migrateResultsData } from "./maintenance/migrateResultsData";
 export { cleanupOldResults } from "./maintenance/cleanupOldResults";
 export { onUserDeleted } from "./auth/onUserDeleted";

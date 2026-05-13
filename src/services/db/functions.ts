@@ -1,6 +1,6 @@
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/services/firebase'
-import type { StudentQuestion } from '@/types'
+import type { StudentQuestion, TestEventType } from '@/types'
 
 // ---- startTest / submitTest (used by TestTakingPage) ----
 
@@ -37,6 +37,25 @@ export async function submitTestFn(
   answers: { questionId: string; selectedIndex: number }[]
 ): Promise<SubmitTestResponse> {
   const result = await submitTestCallable({ resultId, answers })
+  return result.data
+}
+
+// ---- logTestEvent (anti-cheating audit log) ----
+
+interface LogTestEventResponse {
+  logged: number
+}
+
+const logTestEventCallable = httpsCallable<
+  { resultId: string; events: { type: TestEventType; at: number }[] },
+  LogTestEventResponse
+>(functions, 'logTestEvent')
+
+export async function logTestEventFn(
+  resultId: string,
+  events: { type: TestEventType; at: number }[],
+): Promise<LogTestEventResponse> {
+  const result = await logTestEventCallable({ resultId, events })
   return result.data
 }
 
