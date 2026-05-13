@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { MathText } from '@/components/ui/MathText'
+import { Calculator } from '@/components/testing/Calculator'
+import { PeriodicTable } from '@/components/testing/PeriodicTable'
 import type { StudentQuestion, Test } from '@/types'
 
 type Phase = 'loading' | 'pre_start' | 'testing' | 'finished'
@@ -39,6 +41,8 @@ export function TestTakingPage() {
   const [submitError, setSubmitError] = useState(false)
   const [timeExpired, setTimeExpired] = useState(false)
   const [showFullscreenWarning, setShowFullscreenWarning] = useState(false)
+  const [calcOpen, setCalcOpen] = useState(false)
+  const [tableOpen, setTableOpen] = useState(false)
 
   const [durationMs, setDurationMs] = useState<number | null>(null)
 
@@ -346,16 +350,40 @@ export function TestTakingPage() {
           <div className="text-sm text-gray-600">
             Сұрақ {currentIndex + 1} / {questions.length}
           </div>
-          <div
-            className={`text-2xl font-mono font-bold ${
-              isWarning
-                ? timeLeft <= 60
-                  ? 'text-red-600 animate-pulse'
-                  : 'text-orange-500'
-                : 'text-gray-800'
-            }`}
-          >
-            {formatted}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setCalcOpen((v) => !v)}
+              className={`px-3 py-1.5 text-sm rounded-lg border cursor-pointer transition-colors ${
+                calcOpen
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+              title="Калькулятор"
+            >
+              🧮 Калькулятор
+            </button>
+            <button
+              onClick={() => setTableOpen((v) => !v)}
+              className={`px-3 py-1.5 text-sm rounded-lg border cursor-pointer transition-colors ${
+                tableOpen
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+              title="Менделеев кестесі"
+            >
+              ⚛️ Кесте
+            </button>
+            <div
+              className={`text-2xl font-mono font-bold ${
+                isWarning
+                  ? timeLeft <= 60
+                    ? 'text-red-600 animate-pulse'
+                    : 'text-orange-500'
+                  : 'text-gray-800'
+              }`}
+            >
+              {formatted}
+            </div>
           </div>
         </div>
 
@@ -478,6 +506,10 @@ export function TestTakingPage() {
             </div>
           </div>
         )}
+
+        {/* Floating tools — rendered inline (not portal) so they remain inside fullscreen */}
+        {calcOpen && <Calculator onClose={() => setCalcOpen(false)} />}
+        {tableOpen && <PeriodicTable onClose={() => setTableOpen(false)} />}
 
         {/* Fullscreen exit warning overlay */}
         {showFullscreenWarning && (
