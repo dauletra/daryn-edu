@@ -87,6 +87,10 @@ export interface Test {
   shareToken?: string
   timeLimit: number
   questionCount: number
+  allowCalculator?: boolean
+  allowPeriodicTable?: boolean
+  allowSolubilityTable?: boolean
+  allowActivitySeries?: boolean
   createdAt: Timestamp | Date
 }
 

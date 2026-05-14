@@ -52,6 +52,10 @@ export function TestEditPage() {
   const [editVariantNumber, setEditVariantNumber] = useState('')
   const [editTimeLimit, setEditTimeLimit] = useState('')
   const [editQuestionCount, setEditQuestionCount] = useState('')
+  const [editAllowCalculator, setEditAllowCalculator] = useState(false)
+  const [editAllowPeriodicTable, setEditAllowPeriodicTable] = useState(false)
+  const [editAllowSolubilityTable, setEditAllowSolubilityTable] = useState(false)
+  const [editAllowActivitySeries, setEditAllowActivitySeries] = useState(false)
 
   const openEditMeta = useCallback(() => {
     if (!test) return
@@ -61,6 +65,10 @@ export function TestEditPage() {
     setEditVariantNumber(String(test.variantNumber || 1))
     setEditTimeLimit(String(test.timeLimit))
     setEditQuestionCount(String(test.questionCount))
+    setEditAllowCalculator(test.allowCalculator ?? false)
+    setEditAllowPeriodicTable(test.allowPeriodicTable ?? false)
+    setEditAllowSolubilityTable(test.allowSolubilityTable ?? false)
+    setEditAllowActivitySeries(test.allowActivitySeries ?? false)
     setEditMetaOpen(true)
   }, [test])
 
@@ -83,6 +91,10 @@ export function TestEditPage() {
         variantNumber: Number(editVariantNumber),
         timeLimit: Number(editTimeLimit),
         questionCount: Number(editQuestionCount),
+        allowCalculator: editAllowCalculator,
+        allowPeriodicTable: editAllowPeriodicTable,
+        allowSolubilityTable: editAllowSolubilityTable,
+        allowActivitySeries: editAllowActivitySeries,
         title,
       })
       showSuccess('Тест жаңартылды')
@@ -309,6 +321,47 @@ export function TestEditPage() {
           <div className="grid grid-cols-2 gap-4">
             <Input label="Уақыт шегі (мин)" type="number" value={editTimeLimit} onChange={(e) => setEditTimeLimit(e.target.value)} min="1" />
             <Input label="Оқушыға арналған сұрақтар саны" type="number" value={editQuestionCount} onChange={(e) => setEditQuestionCount(e.target.value)} min="1" />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700">Қол жетімді құралдар</label>
+            <div className="flex flex-col gap-2 px-3 py-2 border border-gray-200 rounded-lg">
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editAllowCalculator}
+                  onChange={(e) => setEditAllowCalculator(e.target.checked)}
+                  className="w-4 h-4 cursor-pointer"
+                />
+                🧮 Калькулятор
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editAllowPeriodicTable}
+                  onChange={(e) => setEditAllowPeriodicTable(e.target.checked)}
+                  className="w-4 h-4 cursor-pointer"
+                />
+                ⚛️ Менделеев кестесі
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editAllowSolubilityTable}
+                  onChange={(e) => setEditAllowSolubilityTable(e.target.checked)}
+                  className="w-4 h-4 cursor-pointer"
+                />
+                💧 Ерігіштік кестесі
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editAllowActivitySeries}
+                  onChange={(e) => setEditAllowActivitySeries(e.target.checked)}
+                  className="w-4 h-4 cursor-pointer"
+                />
+                ⚡ Металдардың белсенділік қатары
+              </label>
+            </div>
           </div>
           <div className="flex justify-end gap-2 mt-2">
             <Button variant="secondary" type="button" onClick={() => setEditMetaOpen(false)}>Болдырмау</Button>

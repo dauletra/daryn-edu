@@ -48,6 +48,10 @@ export async function createTest(data: {
   createdBy: string
   timeLimit: number
   questionCount: number
+  allowCalculator: boolean
+  allowPeriodicTable: boolean
+  allowSolubilityTable: boolean
+  allowActivitySeries: boolean
 }): Promise<string> {
   const title = generateTestTitle(data)
   const docRef = await addDoc(collection(db, 'tests'), {
@@ -61,7 +65,7 @@ export async function createTest(data: {
 
 export async function updateTest(
   id: string,
-  data: Partial<Pick<Test, 'testBankId' | 'classLevel' | 'subject' | 'subjectId' | 'language' | 'variantNumber' | 'timeLimit' | 'questionCount' | 'published' | 'title'>>
+  data: Partial<Pick<Test, 'testBankId' | 'classLevel' | 'subject' | 'subjectId' | 'language' | 'variantNumber' | 'timeLimit' | 'questionCount' | 'published' | 'title' | 'allowCalculator' | 'allowPeriodicTable' | 'allowSolubilityTable' | 'allowActivitySeries'>>
 ): Promise<void> {
   await updateDoc(doc(db, 'tests', id), data)
 }

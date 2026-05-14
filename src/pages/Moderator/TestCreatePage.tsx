@@ -27,6 +27,10 @@ export function TestCreatePage() {
   const [variantNumber, setVariantNumber] = useState('1')
   const [timeLimit, setTimeLimit] = useState('30')
   const [questionCount, setQuestionCount] = useState('20')
+  const [allowCalculator, setAllowCalculator] = useState(false)
+  const [allowPeriodicTable, setAllowPeriodicTable] = useState(false)
+  const [allowSolubilityTable, setAllowSolubilityTable] = useState(false)
+  const [allowActivitySeries, setAllowActivitySeries] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
 
@@ -59,6 +63,10 @@ export function TestCreatePage() {
         createdBy: user!.uid,
         timeLimit: Number(timeLimit),
         questionCount: Number(questionCount),
+        allowCalculator,
+        allowPeriodicTable,
+        allowSolubilityTable,
+        allowActivitySeries,
       })
       showSuccess('Тест жасалды')
       navigate(`/moderator/tests/${testId}/edit`)
@@ -154,6 +162,48 @@ export function TestCreatePage() {
             error={errors.questionCount}
             min="1"
           />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-gray-700">Қол жетімді құралдар</label>
+          <div className="flex flex-col gap-2 px-3 py-2 border border-gray-200 rounded-lg">
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={allowCalculator}
+                onChange={(e) => setAllowCalculator(e.target.checked)}
+                className="w-4 h-4 cursor-pointer"
+              />
+              🧮 Калькулятор
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={allowPeriodicTable}
+                onChange={(e) => setAllowPeriodicTable(e.target.checked)}
+                className="w-4 h-4 cursor-pointer"
+              />
+              ⚛️ Менделеев кестесі
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={allowSolubilityTable}
+                onChange={(e) => setAllowSolubilityTable(e.target.checked)}
+                className="w-4 h-4 cursor-pointer"
+              />
+              💧 Ерігіштік кестесі
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={allowActivitySeries}
+                onChange={(e) => setAllowActivitySeries(e.target.checked)}
+                className="w-4 h-4 cursor-pointer"
+              />
+              ⚡ Металдардың белсенділік қатары
+            </label>
+          </div>
         </div>
 
         <div className="flex justify-end gap-2 mt-2">

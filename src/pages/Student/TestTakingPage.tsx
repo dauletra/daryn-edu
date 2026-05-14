@@ -489,50 +489,58 @@ export function TestTakingPage() {
             Сұрақ {currentIndex + 1} / {questions.length}
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end">
-            <button
-              onClick={() => setCalcOpen((v) => !v)}
-              className={`px-2.5 py-1.5 text-sm rounded-lg border cursor-pointer transition-colors ${
-                calcOpen
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
-              title="Калькулятор"
-            >
-              🧮 Калькулятор
-            </button>
-            <button
-              onClick={() => setTableOpen((v) => !v)}
-              className={`px-2.5 py-1.5 text-sm rounded-lg border cursor-pointer transition-colors ${
-                tableOpen
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
-              title="Менделеев кестесі"
-            >
-              ⚛️ Кесте
-            </button>
-            <button
-              onClick={() => setSolubilityOpen((v) => !v)}
-              className={`px-2.5 py-1.5 text-sm rounded-lg border cursor-pointer transition-colors ${
-                solubilityOpen
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
-              title="Ерігіштік кестесі"
-            >
-              💧 Ерігіштік
-            </button>
-            <button
-              onClick={() => setActivityOpen((v) => !v)}
-              className={`px-2.5 py-1.5 text-sm rounded-lg border cursor-pointer transition-colors ${
-                activityOpen
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
-              title="Металдардың белсенділік қатары"
-            >
-              ⚡ Белсенділік
-            </button>
+            {test?.allowCalculator && (
+              <button
+                onClick={() => setCalcOpen((v) => !v)}
+                className={`px-2.5 py-1.5 text-sm rounded-lg border cursor-pointer transition-colors ${
+                  calcOpen
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+                title="Калькулятор"
+              >
+                🧮 Калькулятор
+              </button>
+            )}
+            {test?.allowPeriodicTable && (
+              <button
+                onClick={() => setTableOpen((v) => !v)}
+                className={`px-2.5 py-1.5 text-sm rounded-lg border cursor-pointer transition-colors ${
+                  tableOpen
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+                title="Менделеев кестесі"
+              >
+                ⚛️ Кесте
+              </button>
+            )}
+            {test?.allowSolubilityTable && (
+              <button
+                onClick={() => setSolubilityOpen((v) => !v)}
+                className={`px-2.5 py-1.5 text-sm rounded-lg border cursor-pointer transition-colors ${
+                  solubilityOpen
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+                title="Ерігіштік кестесі"
+              >
+                💧 Ерігіштік
+              </button>
+            )}
+            {test?.allowActivitySeries && (
+              <button
+                onClick={() => setActivityOpen((v) => !v)}
+                className={`px-2.5 py-1.5 text-sm rounded-lg border cursor-pointer transition-colors ${
+                  activityOpen
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+                title="Металдардың белсенділік қатары"
+              >
+                ⚡ Белсенділік
+              </button>
+            )}
             <div
               className={`text-2xl font-mono font-bold ${
                 isWarning
@@ -668,10 +676,10 @@ export function TestTakingPage() {
         )}
 
         {/* Floating tools — rendered inline (not portal) so they remain inside fullscreen */}
-        {calcOpen && <Calculator onClose={() => setCalcOpen(false)} />}
-        {tableOpen && <PeriodicTable onClose={() => setTableOpen(false)} />}
-        {solubilityOpen && <SolubilityTable onClose={() => setSolubilityOpen(false)} />}
-        {activityOpen && <ActivitySeries onClose={() => setActivityOpen(false)} />}
+        {test?.allowCalculator && calcOpen && <Calculator onClose={() => setCalcOpen(false)} />}
+        {test?.allowPeriodicTable && tableOpen && <PeriodicTable onClose={() => setTableOpen(false)} />}
+        {test?.allowSolubilityTable && solubilityOpen && <SolubilityTable onClose={() => setSolubilityOpen(false)} />}
+        {test?.allowActivitySeries && activityOpen && <ActivitySeries onClose={() => setActivityOpen(false)} />}
 
         {/* Fullscreen exit warning overlay */}
         {showFullscreenWarning && (
