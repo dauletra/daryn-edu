@@ -17,6 +17,8 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { MathText } from '@/components/ui/MathText'
 import { Calculator } from '@/components/testing/Calculator'
 import { PeriodicTable } from '@/components/testing/PeriodicTable'
+import { SolubilityTable } from '@/components/testing/SolubilityTable'
+import { ActivitySeries } from '@/components/testing/ActivitySeries'
 import type { StudentQuestion, Test, TestEventType } from '@/types'
 
 type Phase = 'loading' | 'pre_start' | 'testing' | 'finished'
@@ -46,6 +48,8 @@ export function TestTakingPage() {
   const [tabSwitchCount, setTabSwitchCount] = useState(0)
   const [calcOpen, setCalcOpen] = useState(false)
   const [tableOpen, setTableOpen] = useState(false)
+  const [solubilityOpen, setSolubilityOpen] = useState(false)
+  const [activityOpen, setActivityOpen] = useState(false)
 
   const [durationMs, setDurationMs] = useState<number | null>(null)
 
@@ -484,10 +488,10 @@ export function TestTakingPage() {
           <div className="text-sm text-gray-600">
             Сұрақ {currentIndex + 1} / {questions.length}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
             <button
               onClick={() => setCalcOpen((v) => !v)}
-              className={`px-3 py-1.5 text-sm rounded-lg border cursor-pointer transition-colors ${
+              className={`px-2.5 py-1.5 text-sm rounded-lg border cursor-pointer transition-colors ${
                 calcOpen
                   ? 'bg-blue-600 text-white border-blue-600'
                   : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -498,7 +502,7 @@ export function TestTakingPage() {
             </button>
             <button
               onClick={() => setTableOpen((v) => !v)}
-              className={`px-3 py-1.5 text-sm rounded-lg border cursor-pointer transition-colors ${
+              className={`px-2.5 py-1.5 text-sm rounded-lg border cursor-pointer transition-colors ${
                 tableOpen
                   ? 'bg-blue-600 text-white border-blue-600'
                   : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -506,6 +510,28 @@ export function TestTakingPage() {
               title="Менделеев кестесі"
             >
               ⚛️ Кесте
+            </button>
+            <button
+              onClick={() => setSolubilityOpen((v) => !v)}
+              className={`px-2.5 py-1.5 text-sm rounded-lg border cursor-pointer transition-colors ${
+                solubilityOpen
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+              title="Ерігіштік кестесі"
+            >
+              💧 Ерігіштік
+            </button>
+            <button
+              onClick={() => setActivityOpen((v) => !v)}
+              className={`px-2.5 py-1.5 text-sm rounded-lg border cursor-pointer transition-colors ${
+                activityOpen
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+              title="Металдардың белсенділік қатары"
+            >
+              ⚡ Белсенділік
             </button>
             <div
               className={`text-2xl font-mono font-bold ${
@@ -644,6 +670,8 @@ export function TestTakingPage() {
         {/* Floating tools — rendered inline (not portal) so they remain inside fullscreen */}
         {calcOpen && <Calculator onClose={() => setCalcOpen(false)} />}
         {tableOpen && <PeriodicTable onClose={() => setTableOpen(false)} />}
+        {solubilityOpen && <SolubilityTable onClose={() => setSolubilityOpen(false)} />}
+        {activityOpen && <ActivitySeries onClose={() => setActivityOpen(false)} />}
 
         {/* Fullscreen exit warning overlay */}
         {showFullscreenWarning && (

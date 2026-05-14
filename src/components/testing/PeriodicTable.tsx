@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { FloatingTool } from './FloatingTool'
 import {
   ELEMENTS,
   gridPosition,
   CATEGORY_COLORS,
   CATEGORY_LABELS,
+  getPeriod,
+  getGroupLabel,
+  formatOx,
   type PeriodicElement,
   type ElementCategory,
 } from '@/data/periodicTable'
@@ -15,6 +18,26 @@ interface PeriodicTableProps {
 
 export function PeriodicTable({ onClose }: PeriodicTableProps) {
   const [selected, setSelected] = useState<PeriodicElement | null>(null)
+  const [query, setQuery] = useState('')
+
+  /** Match against symbol, atomic number, Kazakh and Russian name (case-insensitive, prefix-friendly). */
+  const matchedNumbers = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return null
+    const set = new Set<number>()
+    for (const el of ELEMENTS) {
+      if (
+        el.sym.toLowerCase() === q ||
+        el.sym.toLowerCase().startsWith(q) ||
+        String(el.n) === q ||
+        el.nameKz.toLowerCase().startsWith(q) ||
+        el.nameRu.toLowerCase().startsWith(q)
+      ) {
+        set.add(el.n)
+      }
+    }
+    return set
+  }, [query])
 
   return (
     <FloatingTool
@@ -26,6 +49,25 @@ export function PeriodicTable({ onClose }: PeriodicTableProps) {
         y: 60,
       }}
     >
+      <div className="mb-2 flex items-center gap-2">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Іздеу: H, Fe, 26, темір, железо..."
+          className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          autoComplete="off"
+          spellCheck={false}
+        />
+        {query && (
+          <button
+            onClick={() => setQuery('')}
+            className="px-2 py-1 text-xs text-gray-500 hover:text-gray-800 cursor-pointer"
+          >
+            Тазалау
+          </button>
+        )}
+      </div>
       <div className="overflow-x-auto">
         <div
           className="grid gap-[2px]"
@@ -38,14 +80,15 @@ export function PeriodicTable({ onClose }: PeriodicTableProps) {
             const { row, col } = gridPosition(el.n)
             const colors = CATEGORY_COLORS[el.cat]
             const isSelected = selected?.n === el.n
+            const isDimmed = matchedNumbers !== null && !matchedNumbers.has(el.n)
             return (
               <button
                 key={el.n}
                 onClick={() => setSelected(isSelected ? null : el)}
                 style={{ gridRow: row, gridColumn: col }}
-                className={`rounded-sm border text-left p-[2px] leading-tight cursor-pointer transition-colors ${colors} ${
+                className={`rounded-sm border text-left p-[2px] leading-tight cursor-pointer transition-all ${colors} ${
                   isSelected ? 'ring-2 ring-blue-500 ring-offset-1 z-10' : 'border-transparent'
-                }`}
+                } ${isDimmed ? 'opacity-25' : ''}`}
               >
                 <div className="text-[8px] font-medium opacity-70">{el.n}</div>
                 <div className="text-[13px] font-bold leading-none">{el.sym}</div>
@@ -71,24 +114,46 @@ export function PeriodicTable({ onClose }: PeriodicTableProps) {
       </div>
 
       {/* Selection detail */}
-      <div className="mt-3 min-h-[64px] px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+      <div className="mt-3 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
         {selected ? (
           <div className="flex items-start gap-3">
             <div
-              className={`flex-shrink-0 w-14 h-14 rounded-lg flex flex-col items-center justify-center ${CATEGORY_COLORS[selected.cat]}`}
+              className={`flex-shrink-0 w-16 h-16 rounded-lg flex flex-col items-center justify-center ${CATEGORY_COLORS[selected.cat]}`}
             >
               <div className="text-[10px] opacity-70">{selected.n}</div>
-              <div className="text-lg font-bold leading-none">{selected.sym}</div>
+              <div className="text-xl font-bold leading-none">{selected.sym}</div>
+              <div className="text-[9px] opacity-80 mt-0.5">{selected.mass}</div>
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 text-xs leading-relaxed">
               <div className="text-sm font-semibold text-gray-900">
                 {selected.nameKz}
                 <span className="text-gray-400 font-normal ml-2">({selected.nameRu})</span>
               </div>
-              <div className="text-xs text-gray-600 mt-0.5">
-                Атомдық масса: <span className="font-mono font-medium">{selected.mass}</span>
+              <div className="text-gray-500 mb-1">{CATEGORY_LABELS[selected.cat]}</div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                <div>
+                  <span className="text-gray-500">Период:</span>{' '}
+                  <span className="font-medium text-gray-800">{getPeriod(selected.n)}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Топ:</span>{' '}
+                  <span className="font-medium text-gray-800">{getGroupLabel(selected.n)}</span>
+                </div>
+                {selected.ox && selected.ox.length > 0 && (
+                  <div className="col-span-2">
+                    <span className="text-gray-500">Тотығу дәрежесі:</span>{' '}
+                    <span className="font-mono font-medium text-gray-800">
+                      {selected.ox.map(formatOx).join(', ')}
+                    </span>
+                  </div>
+                )}
+                {selected.config && (
+                  <div className="col-span-2">
+                    <span className="text-gray-500">Электрондық конфигурация:</span>{' '}
+                    <span className="font-mono font-medium text-gray-800">{selected.config}</span>
+                  </div>
+                )}
               </div>
-              <div className="text-xs text-gray-500">{CATEGORY_LABELS[selected.cat]}</div>
             </div>
           </div>
         ) : (
