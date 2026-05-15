@@ -13,7 +13,10 @@ export function useTimer(onExpire?: () => void): UseTimerReturn {
   const [timeLeft, setTimeLeft] = useState(0)
   const [isRunning, setIsRunning] = useState(false)
   const onExpireRef = useRef(onExpire)
-  onExpireRef.current = onExpire
+
+  useEffect(() => {
+    onExpireRef.current = onExpire
+  }, [onExpire])
 
   useEffect(() => {
     if (!isRunning || timeLeft <= 0) return

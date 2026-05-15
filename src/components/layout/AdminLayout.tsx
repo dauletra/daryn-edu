@@ -9,6 +9,7 @@ const ADMIN_NAV: NavItem[] = [
   { to: '/admin/test-banks', label: 'Тест банктары' },
   { to: '/admin/results', label: 'Нәтижелер' },
   { to: '/admin/analytics', label: 'Аналитика' },
+  { to: '/admin/report', label: 'Анықтама' },
 ]
 
 export function AdminLayout() {

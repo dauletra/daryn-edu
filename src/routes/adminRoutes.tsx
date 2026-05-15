@@ -12,6 +12,7 @@ const TestBankDetailPage = lazy(() => import('@/pages/Admin/TestBankDetailPage')
 const AdminTestsPage = lazy(() => import('@/pages/Admin/AdminTestsPage').then((m) => ({ default: m.AdminTestsPage })))
 const AdminResultsPage = lazy(() => import('@/pages/Admin/AdminResultsPage').then((m) => ({ default: m.AdminResultsPage })))
 const AdminAnalyticsPage = lazy(() => import('@/pages/Admin/AdminAnalyticsPage').then((m) => ({ default: m.AdminAnalyticsPage })))
+const ParallelReportPage = lazy(() => import('@/pages/Admin/ParallelReportPage').then((m) => ({ default: m.ParallelReportPage })))
 const ClassesListPage = lazy(() => import('@/pages/shared/ClassesListPage').then((m) => ({ default: m.ClassesListPage })))
 const ClassDetailPage = lazy(() => import('@/pages/shared/ClassDetailPage').then((m) => ({ default: m.ClassDetailPage })))
 const StudentsPage = lazy(() => import('@/pages/shared/StudentsPage').then((m) => ({ default: m.StudentsPage })))
@@ -43,5 +44,6 @@ export const adminRoutes: RouteObject = {
     { path: 'tests/:id/view', element: <Suspense fallback={fallback}><TestViewPage backTo="/admin/test-banks" backLabel="Банки тестов" /></Suspense> },
     { path: 'results', element: <Suspense fallback={fallback}><AdminResultsPage /></Suspense> },
     { path: 'analytics', element: <Suspense fallback={fallback}><AdminAnalyticsPage /></Suspense> },
+    { path: 'report', element: <Suspense fallback={fallback}><ParallelReportPage /></Suspense> },
   ],
 }

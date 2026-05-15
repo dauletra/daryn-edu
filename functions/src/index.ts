@@ -7,6 +7,7 @@
  */
 
 export { generateQuestions } from "./ai/generateQuestions";
+export { generateReport } from "./ai/generateReport";
 export { startTest } from "./tests/startTest";
 export { submitTest } from "./tests/submitTest";
 export { logTestEvent } from "./tests/logTestEvent";

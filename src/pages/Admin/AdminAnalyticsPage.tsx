@@ -63,8 +63,8 @@ export function AdminAnalyticsPage() {
   )
 
   const subjectRows = useMemo(
-    () => groupBySubject(filteredResults, students ?? []),
-    [filteredResults, students]
+    () => groupBySubject(filteredResults),
+    [filteredResults]
   )
 
   const CLASS_LEVELS: ClassLevel[] = [7, 8, 9, 10, 11]

@@ -1,1 +1,60 @@
 @import "tailwindcss";
+
+/* Печать справки: убираем сайдбар/шапку, раскрываем содержимое */
+.print-only {
+  display: none;
+}
+
+@media print {
+  body {
+    background: white !important;
+  }
+  /* Скрываем элементы вне печатного отчёта */
+  .no-print,
+  nav,
+  aside,
+  header {
+    display: none !important;
+  }
+  .print-only {
+    display: block;
+  }
+  /* Контент на всю ширину */
+  main,
+  .max-w-7xl,
+  .max-w-6xl {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  /* Текст справки рендерится из textarea — превращаем её в обычный блок */
+  .report-textarea {
+    border: none !important;
+    resize: none !important;
+    overflow: visible !important;
+    height: auto !important;
+    font-family: 'Times New Roman', serif !important;
+    font-size: 12pt !important;
+    line-height: 1.5 !important;
+    padding: 0 !important;
+  }
+  .report-text-block {
+    box-shadow: none !important;
+    background: white !important;
+    padding: 0 !important;
+  }
+  .report-table-wrapper {
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+  table {
+    page-break-inside: auto;
+  }
+  tr {
+    page-break-inside: avoid;
+  }
+  h1,
+  h2 {
+    page-break-after: avoid;
+  }
+}

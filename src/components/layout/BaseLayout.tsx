@@ -26,7 +26,7 @@ export function BaseLayout({ navItems, roleLabel }: BaseLayoutProps) {
     <div className="flex h-screen bg-gray-50">
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-4 border-b border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900">EduCore</h2>
+          <h2 className="text-lg font-bold text-gray-900">Daryn Edu</h2>
           <p className="text-sm text-gray-500">{user?.name}</p>
           <p className="text-xs text-gray-400">{roleLabel}</p>
         </div>

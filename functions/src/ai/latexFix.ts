@@ -15,5 +15,6 @@ export function fixControlChars(text: string): string {
     .replace(/\t([a-zA-Z])/g, "\\t$1")
     .replace(/\n([a-zA-Z])/g, "\\n$1")
     .replace(/\r([a-zA-Z])/g, "\\r$1")
+    // eslint-disable-next-line no-control-regex
     .replace(/[\x08]([a-zA-Z])/g, "\\b$1");
 }

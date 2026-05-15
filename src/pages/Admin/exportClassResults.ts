@@ -95,7 +95,7 @@ export async function exportClassResults(params: {
 
   // ── Sheet 1: Итого ─────────────────────────────────────────────────────────
   {
-    const ws = wb.addWorksheet('Жиыны')
+    const ws = wb.addWorksheet('Барлығы')
     const totalCols = 2 + activeSubjects.length + 2
 
     ws.columns = [
