@@ -8,6 +8,7 @@
 
 export { generateQuestions } from "./ai/generateQuestions";
 export { generateReport } from "./ai/generateReport";
+export { generateCompareReport } from "./ai/generateCompareReport";
 export { startTest } from "./tests/startTest";
 export { submitTest } from "./tests/submitTest";
 export { logTestEvent } from "./tests/logTestEvent";

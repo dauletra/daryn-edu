@@ -88,3 +88,50 @@ export async function generateReport(payload: ReportPayload): Promise<string> {
   const result = await generateReportFn({ data: payload })
   return result.data.text
 }
+
+// === Сравнительная анықтама (по нескольким банкам) ===
+
+export interface CompareBankPayload {
+  id: string
+  name: string
+  quarter: 1 | 2 | 3 | 4
+  academicYear: number
+  period: string
+  overall: {
+    studentsTotal: number
+    studentsTook: number
+    avgScore: number
+    passRate: number
+  }
+  byParallel: Array<{
+    classLevel: number
+    studentsTook: number
+    avgScore: number
+    passRate: number
+  }>
+  bySubject: Array<{
+    subject: string
+    studentsTook: number
+    avgScore: number
+    passRate: number
+  }>
+}
+
+export interface CompareReportPayload {
+  banks: CompareBankPayload[]
+  parallels: number[]
+  subjects: string[]
+  customInstructions?: string
+}
+
+const generateCompareReportFn = httpsCallable<
+  { data: CompareReportPayload },
+  { text: string }
+>(functions, 'generateCompareReport', { timeout: 180000 })
+
+export async function generateCompareReport(
+  payload: CompareReportPayload
+): Promise<string> {
+  const result = await generateCompareReportFn({ data: payload })
+  return result.data.text
+}

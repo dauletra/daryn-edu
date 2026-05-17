@@ -139,11 +139,11 @@ export function TestsPage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2 flex-wrap justify-end">
-                            {!test.published && (
-                              <Link to={`/moderator/tests/${test.id}/edit`}>
-                                <Button variant="secondary" className="text-xs">Өңдеу</Button>
-                              </Link>
-                            )}
+                            <Link to={`/moderator/tests/${test.id}/edit`}>
+                              <Button variant="secondary" className="text-xs">
+                                {test.published ? 'Параметрлер' : 'Өңдеу'}
+                              </Button>
+                            </Link>
                             {test.published ? (
                               <>
                                 <Button variant="secondary" className="text-xs" onClick={() => void handlePublish(test.id, false)}>

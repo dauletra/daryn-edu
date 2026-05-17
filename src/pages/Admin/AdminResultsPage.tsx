@@ -259,7 +259,7 @@ function ClassView({ bankResults, activeSubjects, classStudents }: ClassViewProp
                 )}
               </th>
             ))}
-            <th className="text-center px-3 py-3 text-sm font-medium text-gray-500 whitespace-nowrap">Жиыны</th>
+            <th className="text-center px-3 py-3 text-sm font-medium text-gray-500 whitespace-nowrap">Барлығы</th>
             <th className="text-center px-3 py-3 text-sm font-medium text-gray-500 whitespace-nowrap">%</th>
           </tr>
         </thead>

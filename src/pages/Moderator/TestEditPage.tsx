@@ -25,7 +25,12 @@ import { LANGUAGES } from '@/types'
 
 const CLASS_LEVELS: ClassLevel[] = [7, 8, 9, 10, 11]
 
-export function TestEditPage() {
+interface TestEditPageProps {
+  backTo?: string
+  backLabel?: string
+}
+
+export function TestEditPage({ backTo = '/moderator/tests', backLabel = 'Тесттерге оралу' }: TestEditPageProps = {}) {
   const { id: testId } = useParams<{ id: string }>()
   const { showSuccess, showError } = useToast()
 
@@ -146,14 +151,15 @@ export function TestEditPage() {
   if (!test) return <p className="text-gray-500">Тест табылмады</p>
 
   const bankCount = questions?.length ?? 0
+  const isPublished = test.published
 
   return (
     <div>
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <Link to="/moderator/tests" className="text-sm text-blue-600 hover:text-blue-800">
-            &larr; Тесттерге оралу
+          <Link to={backTo} className="text-sm text-blue-600 hover:text-blue-800">
+            &larr; {backLabel}
           </Link>
           <h1 className="text-2xl font-bold text-gray-900 mt-2">{test.title}</h1>
           <p className="text-sm text-gray-500">
@@ -165,10 +171,16 @@ export function TestEditPage() {
         </Button>
       </div>
 
+      {isPublished && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-4 text-sm text-amber-800">
+          Тест жарияланған. Сұрақтардың мәтінін өзгерту үшін алдымен жарияланымнан алыңыз. Параметрлерді өзгертуге болады.
+        </div>
+      )}
+
       {/* Bank counter */}
       <div className="bg-blue-50 rounded-lg px-4 py-3 mb-4 text-sm text-blue-700">
         Банкте: <strong>{bankCount}</strong> сұрақ, оқушы алады: <strong>{test.questionCount}</strong>
-        {bankCount < test.questionCount && (
+        {!isPublished && bankCount < test.questionCount && (
           <span className="text-red-600 ml-2">
             (жариялау үшін сұрақтар жеткіліксіз)
           </span>
@@ -176,16 +188,18 @@ export function TestEditPage() {
       </div>
 
       {/* AI Generator toggle */}
-      <div className="mb-6">
-        <Button
-          variant={showAIGenerator ? 'secondary' : 'primary'}
-          onClick={() => setShowAIGenerator(!showAIGenerator)}
-        >
-          {showAIGenerator ? 'AI генераторды жасыру' : 'AI арқылы сұрақтар жасау'}
-        </Button>
-      </div>
+      {!isPublished && (
+        <div className="mb-6">
+          <Button
+            variant={showAIGenerator ? 'secondary' : 'primary'}
+            onClick={() => setShowAIGenerator(!showAIGenerator)}
+          >
+            {showAIGenerator ? 'AI генераторды жасыру' : 'AI арқылы сұрақтар жасау'}
+          </Button>
+        </div>
+      )}
 
-      {showAIGenerator && testId && (
+      {!isPublished && showAIGenerator && testId && (
         <div className="mb-6">
           <AIQuestionGenerator
             testId={testId}
@@ -200,12 +214,12 @@ export function TestEditPage() {
       {/* Questions list */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Сұрақтар банкі</h2>
-        {!showAddForm && (
+        {!isPublished && !showAddForm && (
           <Button onClick={() => setShowAddForm(true)}>Қолмен сұрақ қосу</Button>
         )}
       </div>
 
-      {showAddForm && (
+      {!isPublished && showAddForm && (
         <div className="mb-4">
           <QuestionForm onSubmit={handleAddQuestion} onCancel={() => setShowAddForm(false)} />
         </div>
@@ -215,7 +229,7 @@ export function TestEditPage() {
         <div className="flex flex-col gap-3">
           {questions.map((q, idx) => (
             <div key={q.id} className="bg-white rounded-xl shadow-sm p-4">
-              {editingQuestionId === q.id ? (
+              {!isPublished && editingQuestionId === q.id ? (
                 <QuestionForm
                   initialData={{ text: q.text, options: q.options, correctIndex: q.correctIndex }}
                   onSubmit={(data) => handleUpdateQuestion(q.id, data)}
@@ -243,20 +257,22 @@ export function TestEditPage() {
                       ))}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 ml-4">
-                    <button
-                      onClick={() => setEditingQuestionId(q.id)}
-                      className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer"
-                    >
-                      Өңдеу
-                    </button>
-                    <button
-                      onClick={() => setDeleteConfirmId(q.id)}
-                      className="text-sm text-red-600 hover:text-red-800 cursor-pointer"
-                    >
-                      Жою
-                    </button>
-                  </div>
+                  {!isPublished && (
+                    <div className="flex items-center gap-2 ml-4">
+                      <button
+                        onClick={() => setEditingQuestionId(q.id)}
+                        className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer"
+                      >
+                        Өңдеу
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirmId(q.id)}
+                        className="text-sm text-red-600 hover:text-red-800 cursor-pointer"
+                      >
+                        Жою
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

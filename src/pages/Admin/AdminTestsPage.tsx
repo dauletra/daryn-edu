@@ -120,6 +120,12 @@ export function AdminTestsPage() {
                       >
                         Қарау
                       </Link>
+                      <Link
+                        to={`/admin/tests/${test.id}/edit`}
+                        className="text-sm text-blue-600 hover:text-blue-800"
+                      >
+                        {test.published ? 'Параметрлер' : 'Өңдеу'}
+                      </Link>
                       <button
                         onClick={() => void handlePublishToggle(test)}
                         disabled={submitting}

@@ -124,7 +124,7 @@ export async function exportClassResults(params: {
       '#',
       'Оқушы',
       ...activeSubjects.map((s) => `${s.subjectName} [${subjectTotals.get(s.subjectId) ?? '?'}]`),
-      'Жиыны',
+      'Барлығы',
       '%',
     ]
     const headerRow = ws.addRow(headers)
